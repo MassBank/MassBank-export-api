@@ -1,0 +1,25 @@
+openapi: 3.0.3
+info:
+  title: Similarity score api for MassBank3
+  description:
+    This similarity score api for MassBank3 calculates the spectral similarity
+    between the spectrum defined in the query peak list and the reference spectra
+    list.
+  version: "0.1"
+servers:
+  - url: http://localhost:8080
+    description: Local server
+paths:
+  /version:
+    get:
+      summary: Get the version string of the implementation.
+      x-openapi-router-controller: similarity_service_impl.similarity_service_impl_controller
+      operationId: version_get
+      responses:
+        "200":
+          description: version string
+          content:
+            application/json:
+              schema:
+                type: string
+              example: similarity service 0.1
