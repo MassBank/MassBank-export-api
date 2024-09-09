@@ -1,10 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Similarity score api for MassBank3
+  title: Export MassBank content in different formats
   description:
-    This similarity score api for MassBank3 calculates the spectral similarity
-    between the spectrum defined in the query peak list and the reference spectra
-    list.
+    This microservice converts MassBank records into a number of different other formats.
   version: "0.1"
 servers:
   - url: http://localhost:8080
@@ -13,8 +11,6 @@ paths:
   /version:
     get:
       summary: Get the version string of the implementation.
-      x-openapi-router-controller: similarity_service_impl.similarity_service_impl_controller
-      operationId: version_get
       responses:
         "200":
           description: version string
@@ -22,4 +18,89 @@ paths:
             application/json:
               schema:
                 type: string
-              example: similarity service 0.1
+              example: export service 0.1
+  /convert:
+    post:
+      summary: Create a conversion task.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/conversion"
+      responses:
+        "200":
+          description: Conversion successfully completed.
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+
+        "400":
+          description: The server can not process the input.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/error"
+        "500":
+          description: The server encountered an unexpected condition.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/error"
+
+components:
+  schemas:
+    record_list:
+      description: a list of records
+      type: object
+      properties:
+        record_list:
+          type: array
+          items:
+            type: string
+          example:
+            - MSBNK-IPB_Halle-PB001341
+            - MSBNK-IPB_Halle-PB006202
+            - MSBNK-IPB_Halle-PB006203
+            - MSBNK-IPB_Halle-PB001342
+            - MSBNK-IPB_Halle-PB001343
+
+    format:
+      description: a supported output format
+      type: object
+      properties:
+        format:
+          type: string
+          enum:
+            - nist_msp
+            - riken_msp
+          example: nist_msp
+
+    conversion:
+      description: a conversion task
+      allOf:
+        - $ref: "#/components/schemas/record_list"
+        - $ref: "#/components/schemas/format"
+
+
+    error:
+      description: an error response
+      title: error
+      type: object
+      properties:
+        status:
+          type: number
+        title:
+          type: string
+        detail:
+          type: string
+        type:
+          type: string
+      example:
+        status: 500
+        title: "Conversion Error"
+        detail: "unexpected condition"
+        type: "about:blank"
+
+
