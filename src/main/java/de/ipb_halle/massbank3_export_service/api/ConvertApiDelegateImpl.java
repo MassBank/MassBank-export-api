@@ -1,12 +1,12 @@
 package de.ipb_halle.massbank3_export_service.api;
 
-import de.ipb_halle.massbank3_export_service.model.Conversion;
+
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import de.ipb_halle.massbank3_export_service.model.Conversion;
+import org.springframework.http.MediaType;
 
-import java.util.Optional;
 
 @Service
 public class ConvertApiDelegateImpl implements ConvertApiDelegate {
