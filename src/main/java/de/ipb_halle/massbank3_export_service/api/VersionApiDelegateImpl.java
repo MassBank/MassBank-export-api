@@ -18,6 +18,7 @@ public class VersionApiDelegateImpl implements VersionApiDelegate {
     @Override
     public ResponseEntity<String> versionGet() {
         Gson gson = new Gson();
+        System.out.println("versionGet");
         return new ResponseEntity<>(gson.toJson("export service 0.1"),  HttpStatus.OK);
     }
 

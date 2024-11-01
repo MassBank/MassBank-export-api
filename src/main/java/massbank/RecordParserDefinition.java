@@ -75,24 +75,9 @@ public class RecordParserDefinition extends GrammarDefinition {
 	private String InChiKeyFromCH_IUPAC = "";
 	private String InChiKeyFromCH_LINK = "";
 	private int pk_num_peak = -1;
-	// controled vocabulary handler
-	CVUtil cvutil = CVUtil.get();
-	
+
 	// load a list of strings from .config or resource folder
 	private static List<String> getResourceFileAsList(String fileName)  {
-		// Try to load from user DataRootPath
-		File resourceFileFromDataRootPath = null;
-		File configRootPath = new File(Config.get().DataRootPath(), ".config");
-		resourceFileFromDataRootPath = new File(configRootPath, fileName);
-		if ((resourceFileFromDataRootPath != null) && resourceFileFromDataRootPath.exists()) {
-			logger.trace("Loading resource from DataRootPath at: " + resourceFileFromDataRootPath.getAbsolutePath());
-			try (FileReader fr = new FileReader(resourceFileFromDataRootPath); BufferedReader reader = new BufferedReader(fr)) {
-				return reader.lines().collect(Collectors.toList());
-			} catch (IOException e) {
-				logger.error("Can not read resource file: " + e.getMessage());
-			}
-		}
-		// If not found: try to load fallback from internal resources
 		logger.trace("Loading internal resource: " + fileName);
 		try (InputStream is = ClassLoader.getSystemClassLoader().getResourceAsStream(fileName)) {
 			if (is == null)
