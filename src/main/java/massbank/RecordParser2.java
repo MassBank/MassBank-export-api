@@ -13,8 +13,8 @@ import org.petitparser.tools.GrammarParser;
  * System.out.println(result.value);
  * </pre>
  */
-public class RecordParser extends GrammarParser {
-  public RecordParser(Record callback, Set<String> config) {
-    super(new RecordParserDefinition(callback, config));
+public class RecordParser2 extends GrammarParser {
+  public RecordParser2(Record callback, Set<String> config) {
+    super(new RecordParserDefinition2(callback, config));
   }
 }

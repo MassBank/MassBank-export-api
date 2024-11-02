@@ -5,8 +5,6 @@ import static org.petitparser.parser.primitive.CharacterParser.letter;
 import static org.petitparser.parser.primitive.CharacterParser.word;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -57,8 +55,8 @@ import io.github.dan2097.jnainchi.InchiStatus;
 import io.github.dan2097.jnainchi.JnaInchi;
 
 
-public class RecordParserDefinition extends GrammarDefinition {
-	private static final Logger logger = LogManager.getLogger(RecordParserDefinition.class);
+public class RecordParserDefinition2 extends GrammarDefinition {
+	private static final Logger logger = LogManager.getLogger(RecordParserDefinition2.class);
 	
 	// legacy mode to let validation pass on legacy records until they are fixed
 	private final boolean legacy;
@@ -75,6 +73,7 @@ public class RecordParserDefinition extends GrammarDefinition {
 	private String InChiKeyFromCH_IUPAC = "";
 	private String InChiKeyFromCH_LINK = "";
 	private int pk_num_peak = -1;
+
 
 	// load a list of strings from .config or resource folder
 	private static List<String> getResourceFileAsList(String fileName)  {
@@ -98,7 +97,7 @@ public class RecordParserDefinition extends GrammarDefinition {
 		return null;
 	}
 	
-	public RecordParserDefinition(Record callback, Set<String> config) {
+	public RecordParserDefinition2(Record callback, Set<String> config) {
 		this.legacy = config.contains("legacy");
 		this.weak = config.contains("weak");
 		this.online = config.contains("online");

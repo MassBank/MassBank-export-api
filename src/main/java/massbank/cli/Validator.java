@@ -28,11 +28,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.petitparser.context.Result;
 import massbank.Record;
-import massbank.RecordParser;
-import massbank.RecordParserDefinition;
+import massbank.RecordParser2;
+import massbank.RecordParserDefinition2;
 
 /**
- * This class validates a record file or String by using the syntax of {@link RecordParserDefinition}.
+ * This class validates a record file or String by using the syntax of {@link RecordParserDefinition2}.
  * @author rmeier
  * @version 03-06-2020
  */
@@ -77,7 +77,7 @@ public class Validator {
 	 */
 	public static Record validate(String recordString, Set<String> config) {
 		Record record = new Record();
-		RecordParser recordparser = new RecordParser(record, config);
+		RecordParser2 recordparser = new RecordParser2(record, config);
 		Result res =  recordparser.parse(recordString);
 		if (res.isFailure()) {
 			logger.error(res.getMessage());

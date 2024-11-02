@@ -39,6 +39,9 @@ public class DataReader {
                     .filter(matcher::matches)) {
                 List<Path> recordFiles = paths.toList();
                 logger.info("Found {} record files in the directory", recordFiles.size());
+
+                ThreadLocal<RecordParser> threadLocalParser = ThreadLocal.withInitial(() -> new RecordParser(Set.of("legacy")));
+
                 long recordCount = recordFiles.parallelStream()
                         .map(filename -> {
                             try {
@@ -50,13 +53,12 @@ public class DataReader {
                         })
                         .filter(Objects::nonNull)
                         .map(recordString -> {
-                            Record record = new Record();
-                            RecordParser recordparser = new RecordParser(record, Set.of("legacy"));
+                            RecordParser recordparser = threadLocalParser.get();
                             Result res = recordparser.parse(recordString);
                             if (res.isFailure()) {
                                  return null;
                             }
-                            return record;
+                            return res.get();
                         })
                         .filter(Objects::nonNull)
                         .count();
