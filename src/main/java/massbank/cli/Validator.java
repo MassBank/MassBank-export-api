@@ -28,11 +28,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.petitparser.context.Result;
 import massbank.Record;
-import massbank.RecordParser2;
-import massbank.RecordParserDefinition2;
+import massbank.RecordParser;
+import massbank.RecordParserDefinition;
 
 /**
- * This class validates a record file or String by using the syntax of {@link RecordParserDefinition2}.
+ * This class validates a record file or String by using the syntax of {@link RecordParserDefinition}.
  * @author rmeier
  * @version 03-06-2020
  */
@@ -76,8 +76,7 @@ public class Validator {
 	 * <code>config</code>.
 	 */
 	public static Record validate(String recordString, Set<String> config) {
-		Record record = new Record();
-		RecordParser2 recordparser = new RecordParser2(record, config);
+		RecordParser recordparser = new RecordParser(config);
 		Result res =  recordparser.parse(recordString);
 		if (res.isFailure()) {
 			logger.error(res.getMessage());
@@ -98,20 +97,13 @@ public class Validator {
 				line++;
 			}
 			return null;
+		} else {
+			return res.get();
 		}
-		return record;
 	}
 
 	public static void main(String[] arguments) throws SQLException, ConfigurationException {
-		// load version and print
-		final Properties properties = new Properties();
-		try {
-			properties.load(ClassLoader.getSystemClassLoader().getResourceAsStream("project.properties"));
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-		System.out.println("Validator version: " + properties.getProperty("version"));
+
 
 		// parse command line
 		final Options options = new Options();
@@ -167,7 +159,7 @@ public class Validator {
 		AtomicBoolean doDatbase = new AtomicBoolean(cmd.hasOption("db"));
 		AtomicBoolean legacyMode = new AtomicBoolean(cmd.hasOption("legacy"));
 		AtomicBoolean onlineMode = new AtomicBoolean(cmd.hasOption("online"));
-		List<String> accessions = recordfiles.parallelStream().map(filename -> {
+		List<String> accessions = recordfiles.stream().map(filename -> {
 			String recordString;
 			String accession=null;
 			logger.info("Working on " + filename + ".");
@@ -200,29 +192,29 @@ public class Validator {
 					}
 					
 					// validate correct serialization: String <-> (String -> Record class -> String)
-					String recordStringFromRecord = record.toString();
-					recordString = recordString.replaceAll("\\r\\n?", "\n");
-					int position = StringUtils.indexOfDifference(new String [] {recordString, recordStringFromRecord});
-					if (position != -1) {
-						logger.error("Error in \'" + filename + "\'.");
-						logger.error("File content differs from generated record string.\nThis might be a code problem. Please Report!");
-						String[] tokens = recordStringFromRecord.split("\\n");
-						int line = 0, col = 0, offset = 0;
-						for (String token : tokens) {
-							offset = offset + token.length() + 1;
-							if (position < offset) {
-								col = position - (offset - (token.length() + 1));
-								logger.error("Error in line " + (line+1) + ".");
-								logger.error(tokens[line]);
-								StringBuilder error_at = new StringBuilder(StringUtils.repeat(" ", col));
-								error_at.append('^');
-								logger.error(error_at);
-								haserror.set(true);
-								break;
-							}
-							line++;
-						}
-					}
+//					String recordStringFromRecord = record.toString();
+//					recordString = recordString.replaceAll("\\r\\n?", "\n");
+//					int position = StringUtils.indexOfDifference(new String [] {recordString, recordStringFromRecord});
+//					if (position != -1) {
+//						logger.error("Error in \'" + filename + "\'.");
+//						logger.error("File content differs from generated record string.\nThis might be a code problem. Please Report!");
+//						String[] tokens = recordStringFromRecord.split("\\n");
+//						int line = 0, col = 0, offset = 0;
+//						for (String token : tokens) {
+//							offset = offset + token.length() + 1;
+//							if (position < offset) {
+//								col = position - (offset - (token.length() + 1));
+//								logger.error("Error in line " + (line+1) + ".");
+//								logger.error(tokens[line]);
+//								StringBuilder error_at = new StringBuilder(StringUtils.repeat(" ", col));
+//								error_at.append('^');
+//								logger.error(error_at);
+//								haserror.set(true);
+//								break;
+//							}
+//							line++;
+//						}
+//					}
 				}
 			} catch (IOException e) {
 				e.printStackTrace();

@@ -17,6 +17,7 @@ import java.nio.file.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 @Component
@@ -32,36 +33,44 @@ public class DataReader {
         logger.info("Application started with data directory: {}", dataDirectory);
         Path dataDirectoryPath = Paths.get(dataDirectory);
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + dataDirectoryPath + "/*/*.txt");
+        AtomicInteger progressCounter = new AtomicInteger(0);
+
 
         if (Files.exists(dataDirectoryPath) && Files.isDirectory(dataDirectoryPath)) {
             try (Stream<Path> paths = Files.walk(dataDirectoryPath)
-                    .filter(Files::isRegularFile)
-                    .filter(matcher::matches)) {
+                .filter(Files::isRegularFile)
+                .filter(matcher::matches)) {
                 List<Path> recordFiles = paths.toList();
                 logger.info("Found {} record files in the directory", recordFiles.size());
+                int totalRecords = recordFiles.size();
 
-                ThreadLocal<RecordParser> threadLocalParser = ThreadLocal.withInitial(() -> new RecordParser(Set.of("legacy")));
+                RecordParser recordparser = new RecordParser(Set.of("legacy"));
 
                 long recordCount = recordFiles.parallelStream()
-                        .map(filename -> {
-                            try {
-                                return Files.readString(filename, StandardCharsets.UTF_8);
-                            } catch (IOException e) {
-                                logger.error("Error reading file: {}", filename, e);
-                                return null;
-                            }
-                        })
-                        .filter(Objects::nonNull)
-                        .map(recordString -> {
-                            RecordParser recordparser = threadLocalParser.get();
-                            Result res = recordparser.parse(recordString);
-                            if (res.isFailure()) {
-                                 return null;
-                            }
-                            return res.get();
-                        })
-                        .filter(Objects::nonNull)
-                        .count();
+                    .map(filename -> {
+                        try {
+                            return Files.readString(filename, StandardCharsets.UTF_8);
+                        } catch (IOException e) {
+                            logger.error("Error reading file: {}", filename, e);
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .map(recordString -> {
+                        Result res = recordparser.parse(recordString);
+                        if (res.isFailure()) {
+                            return null;
+                        }
+                        return res.get();
+                    })
+                    .filter(Objects::nonNull)
+                    .peek(record -> {
+                        int progress = progressCounter.incrementAndGet();
+                        if (progress % (totalRecords / 10) == 0) {
+                            logger.info("Progress: {}/{}", progress, totalRecords);
+                        }
+                    })
+                    .count();
                 logger.info("Read {} records", recordCount);
             } catch (IOException e) {
                 logger.error("Error finding record files in data directory", e);
