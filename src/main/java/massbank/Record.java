@@ -901,7 +901,7 @@ public class Record {
 		result.add("peaks", peaklist);
 		return result;
 	}
-	
+
 	public static class Structure{
 		public final String CH_SMILES;
 		public final String CH_IUPAC;

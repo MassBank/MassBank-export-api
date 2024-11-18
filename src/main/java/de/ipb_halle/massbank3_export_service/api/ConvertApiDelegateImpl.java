@@ -1,16 +1,22 @@
 package de.ipb_halle.massbank3_export_service.api;
 
 
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import de.ipb_halle.massbank3_export_service.model.Conversion;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static de.ipb_halle.massbank3_export_service.api.DataReader.recordToRecordString;
 
 
 @Service
 public class ConvertApiDelegateImpl implements ConvertApiDelegate {
-
     /**
      * POST /convert : Create a conversion task.
      *
@@ -19,10 +25,24 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
      * @see ConvertApi#convertPost
      */
     @Override
-    public ResponseEntity<String> convertPost(Conversion conversion) {
+    public ResponseEntity<org.springframework.core.io.Resource> convertPost(Conversion conversion) {
         System.out.println("Conversion task received: " + conversion);
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
+        String concatenatedRecords = conversion.getRecordList().stream()
+            .map(recordToRecordString::get)
+            .filter(Objects::nonNull)
+            .collect(Collectors.joining("\n"));
+
+        ByteArrayResource resource = new ByteArrayResource(concatenatedRecords.getBytes(StandardCharsets.UTF_8));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=converted_records.txt");
+
+        return ResponseEntity.ok()
+            .headers(headers)
+            .contentLength(resource.contentLength())
+            .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+            .body(resource);
     }
 
 }

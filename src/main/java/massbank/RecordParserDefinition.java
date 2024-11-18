@@ -59,14 +59,14 @@ public class RecordParserDefinition extends GrammarDefinition {
     // turn on additional validation steps, which require online checks; slow!
     private final boolean online;
 
-    private IMolecularFormula fromCH_FORMULA = SilentChemObjectBuilder.getInstance().newInstance(IMolecularFormula.class);
-    private IAtomContainer fromCH_SMILES = SilentChemObjectBuilder.getInstance().newAtomContainer();
-    private String InChiKeyFromCH_SMILES = "";
-    private boolean smilesHasWildcards = false;
-    private IAtomContainer fromCH_IUPAC = SilentChemObjectBuilder.getInstance().newAtomContainer();
-    private String InChiKeyFromCH_IUPAC = "";
-    private String InChiKeyFromCH_LINK = "";
-    private int pk_num_peak = -1;
+    //private IMolecularFormula fromCH_FORMULA = SilentChemObjectBuilder.getInstance().newInstance(IMolecularFormula.class);
+    //private IAtomContainer fromCH_SMILES = SilentChemObjectBuilder.getInstance().newAtomContainer();
+    //private String InChiKeyFromCH_SMILES = "";
+    //private boolean smilesHasWildcards = false;
+    //private IAtomContainer fromCH_IUPAC = SilentChemObjectBuilder.getInstance().newAtomContainer();
+    //private String InChiKeyFromCH_IUPAC = "";
+    //private String InChiKeyFromCH_LINK = "";
+    //private int pk_num_peak = -1;
 
 
     // load a list of strings from .config or resource folder
@@ -711,22 +711,22 @@ public class RecordParserDefinition extends GrammarDefinition {
                         ).flatten()
                         // call a Continuation Parser to validate content of formula
                         //TODO: move to separate function
-                        .callCC((Function<Context, Result> continuation, Context context) -> {
-                            Result r = continuation.apply(context);
-                            if (r.isSuccess()) {
-                                if (!"N/A".equals(r.get())) {
-                                    // validate formula
-                                    fromCH_FORMULA = MolecularFormulaManipulator.getMolecularFormula(r.get(), SilentChemObjectBuilder.getInstance());
-                                    String formulaFromCH_FORMULA = MolecularFormulaManipulator.getString(fromCH_FORMULA);
-                                    if (!formulaFromCH_FORMULA.equals(r.get())) {
-                                        return context.failure("Can not parse formula in \"CH$FORMULA\" field.\n"
-                                            + "Formula from CH$FORMULA: " + r.get() + "\n"
-                                            + "Formula after parsing  : " + formulaFromCH_FORMULA);
-                                    }
-                                }
-                            }
-                            return r;
-                        })
+//                        .callCC((Function<Context, Result> continuation, Context context) -> {
+//                            Result r = continuation.apply(context);
+//                            if (r.isSuccess()) {
+//                                if (!"N/A".equals(r.get())) {
+//                                    // validate formula
+//                                    fromCH_FORMULA = MolecularFormulaManipulator.getMolecularFormula(r.get(), SilentChemObjectBuilder.getInstance());
+//                                    String formulaFromCH_FORMULA = MolecularFormulaManipulator.getString(fromCH_FORMULA);
+//                                    if (!formulaFromCH_FORMULA.equals(r.get())) {
+//                                        return context.failure("Can not parse formula in \"CH$FORMULA\" field.\n"
+//                                            + "Formula from CH$FORMULA: " + r.get() + "\n"
+//                                            + "Formula after parsing  : " + formulaFromCH_FORMULA);
+//                                    }
+//                                }
+//                            }
+//                            return r;
+//                        })
                 )
                 .seq(Token.NEWLINE_PARSER)
                 .pick(2)
@@ -771,41 +771,41 @@ public class RecordParserDefinition extends GrammarDefinition {
                         .flatten()
                         // call a Continuation Parser to validate content of SMILES string
                         //TODO: move to separate function
-                        .callCC((Function<Context, Result> continuation, Context context) -> {
-                            Result r = continuation.apply(context);
-                            if (r.isSuccess()) {
-                                if (!"N/A".equals(r.get())) {
-                                    // validate SMILES
-                                    try {
-                                        fromCH_SMILES = new SmilesParser(SilentChemObjectBuilder.getInstance()).parseSmiles(r.get());
-                                    } catch (InvalidSmilesException e) {
-                                        return context.failure("Can not parse SMILES string in \"CH$SMILES\" field.\nError from CDK:\n" + e.getMessage());
-                                    }
-                                    // create InChIKey from SMILES if it is a full defined structure
-                                    for (IAtom atom : fromCH_SMILES.atoms()) {
-                                        if (atom.getAtomicNumber() == 0) smilesHasWildcards = true;
-                                    }
-                                    if (!smilesHasWildcards) {
-                                        try {
-                                            InChIGenerator inchiGen = InChIGeneratorFactory.getInstance().getInChIGenerator(fromCH_SMILES);
-                                            InchiStatus ret = inchiGen.getStatus();
-                                            if (ret == InchiStatus.WARNING) {
-                                                // Structure generated, but with warning message
-                                                logger.warn("InChI warning: " + inchiGen.getMessage());
-                                            } else if (ret == InchiStatus.ERROR) {
-                                                // InChI generation failed
-                                                return context.failure("Can not create InChIKey from SMILES string in \"CH$SMILES\" field. InChI generation failed: " + ret + " [" + inchiGen.getMessage() + "] for " + r.get() + ".");
-                                            }
-                                            InChiKeyFromCH_SMILES = inchiGen.getInchiKey();
-                                        } catch (CDKException e) {
-                                            return context.failure("Can not create InChIKey from SMILES string in \"CH$SMILES\" field.\nError from CDK:\n" + e.getMessage());
-                                        }
-                                    }
-
-                                }
-                            }
-                            return r;
-                        })
+//                        .callCC((Function<Context, Result> continuation, Context context) -> {
+//                            Result r = continuation.apply(context);
+//                            if (r.isSuccess()) {
+//                                if (!"N/A".equals(r.get())) {
+//                                    // validate SMILES
+//                                    try {
+//                                        fromCH_SMILES = new SmilesParser(SilentChemObjectBuilder.getInstance()).parseSmiles(r.get());
+//                                    } catch (InvalidSmilesException e) {
+//                                        return context.failure("Can not parse SMILES string in \"CH$SMILES\" field.\nError from CDK:\n" + e.getMessage());
+//                                    }
+//                                    // create InChIKey from SMILES if it is a full defined structure
+//                                    for (IAtom atom : fromCH_SMILES.atoms()) {
+//                                        if (atom.getAtomicNumber() == 0) smilesHasWildcards = true;
+//                                    }
+//                                    if (!smilesHasWildcards) {
+//                                        try {
+//                                            InChIGenerator inchiGen = InChIGeneratorFactory.getInstance().getInChIGenerator(fromCH_SMILES);
+//                                            InchiStatus ret = inchiGen.getStatus();
+//                                            if (ret == InchiStatus.WARNING) {
+//                                                // Structure generated, but with warning message
+//                                                logger.warn("InChI warning: " + inchiGen.getMessage());
+//                                            } else if (ret == InchiStatus.ERROR) {
+//                                                // InChI generation failed
+//                                                return context.failure("Can not create InChIKey from SMILES string in \"CH$SMILES\" field. InChI generation failed: " + ret + " [" + inchiGen.getMessage() + "] for " + r.get() + ".");
+//                                            }
+//                                            InChiKeyFromCH_SMILES = inchiGen.getInchiKey();
+//                                        } catch (CDKException e) {
+//                                            return context.failure("Can not create InChIKey from SMILES string in \"CH$SMILES\" field.\nError from CDK:\n" + e.getMessage());
+//                                        }
+//                                    }
+//
+//                                }
+//                            }
+//                            return r;
+//                        })
                 )
                 .seq(Token.NEWLINE_PARSER)
                 .pick(2)
@@ -829,32 +829,32 @@ public class RecordParserDefinition extends GrammarDefinition {
                         .flatten()
                         // call a Continuation Parser to validate content of CH$IUPAC
                         //TODO: move to separate function
-                        .callCC((Function<Context, Result> continuation, Context context) -> {
-                            Result r = continuation.apply(context);
-                            if (r.isSuccess()) {
-                                if (!"N/A".equals(r.get())) {
-                                    // validate InChI
-                                    try {
-                                        InChIToStructure intoStruct = InChIGeneratorFactory.getInstance().getInChIToStructure(r.get(), SilentChemObjectBuilder.getInstance());
-                                        InchiStatus ret = intoStruct.getStatus();
-                                        if (ret == InchiStatus.WARNING) {
-                                            // Structure generated, but with warning message
-                                            logger.warn("InChI warning: " + intoStruct.getMessage());
-                                            //logger.warn(callback.ACCESSION());
-                                        } else if (ret == InchiStatus.ERROR) {
-                                            // Structure generation failed
-                                            return context.failure("Can not parse InChI string in \"CH$IUPAC\" field. Structure generation failed.\nError:\n" + intoStruct.getMessage() + " for " + r.get() + ".");
-                                        }
-                                        fromCH_IUPAC = intoStruct.getAtomContainer();
-                                    } catch (CDKException e) {
-                                        return context.failure("Can not parse InChI string in \"CH$IUPAC\" field.\nError from CDK:\n" + e.getMessage());
-                                    }
-                                    // create an InChiKey
-                                    InChiKeyFromCH_IUPAC = JnaInchi.inchiToInchiKey(r.get()).getInchiKey();
-                                }
-                            }
-                            return r;
-                        })
+//                        .callCC((Function<Context, Result> continuation, Context context) -> {
+//                            Result r = continuation.apply(context);
+//                            if (r.isSuccess()) {
+//                                if (!"N/A".equals(r.get())) {
+//                                    // validate InChI
+//                                    try {
+//                                        InChIToStructure intoStruct = InChIGeneratorFactory.getInstance().getInChIToStructure(r.get(), SilentChemObjectBuilder.getInstance());
+//                                        InchiStatus ret = intoStruct.getStatus();
+//                                        if (ret == InchiStatus.WARNING) {
+//                                            // Structure generated, but with warning message
+//                                            logger.warn("InChI warning: " + intoStruct.getMessage());
+//                                            //logger.warn(callback.ACCESSION());
+//                                        } else if (ret == InchiStatus.ERROR) {
+//                                            // Structure generation failed
+//                                            return context.failure("Can not parse InChI string in \"CH$IUPAC\" field. Structure generation failed.\nError:\n" + intoStruct.getMessage() + " for " + r.get() + ".");
+//                                        }
+//                                        fromCH_IUPAC = intoStruct.getAtomContainer();
+//                                    } catch (CDKException e) {
+//                                        return context.failure("Can not parse InChI string in \"CH$IUPAC\" field.\nError from CDK:\n" + e.getMessage());
+//                                    }
+//                                    // create an InChiKey
+//                                    InChiKeyFromCH_IUPAC = JnaInchi.inchiToInchiKey(r.get()).getInchiKey();
+//                                }
+//                            }
+//                            return r;
+//                        })
                 )
                 .seq(Token.NEWLINE_PARSER)
                 .pick(3)
@@ -1916,187 +1916,187 @@ public class RecordParserDefinition extends GrammarDefinition {
 
     private Result checkSemantic(Function<Context, Result> continuation, Context context, Record callback) {
         Result r = continuation.apply(context);
-        if (r.isSuccess() && !callback.DEPRECATED()) {
-            // if any structural information is in CH$IUPAC, then CH$FORMULA, CH$SMILES CH$LINK: INCHIKEY must be defined and match
-            if (!"N/A".equals(callback.CH_IUPAC())) {
-                //compare SMILES
-                if ("N/A".equals(callback.CH_SMILES()))
-                    return context.failure("If CH$IUPAC is defined, CH$SMILES can not be \"N/A\".");
-                // compare the structures in CH$SMILES and CH$IUPAC with the help of InChIKeys
-                logger.trace("InChIKey from CH$SMILES: " + InChiKeyFromCH_SMILES);
-                logger.trace("InChIKey from CH$IUPAC:  " + InChiKeyFromCH_IUPAC);
-
-                // in legacy mode only check field1 of InChIKey
-                if (legacy) {
-                    if (InChiKeyFromCH_SMILES.length() != 27 || InChiKeyFromCH_IUPAC.length() != 27 || !InChiKeyFromCH_SMILES.substring(0, 14).equals(InChiKeyFromCH_IUPAC.substring(0, 14))) {
-                        return context.failure("InChIKey generated from SMILES string in \"CH$SMILES\" field does not match InChIKey from \"CH$IUPAC\".\n"
-                            + "InChIKey from CH$SMILES: " + InChiKeyFromCH_SMILES + "\n"
-                            + "InChIKey from CH$IUPAC:  " + InChiKeyFromCH_IUPAC);
-                    }
-                } else {
-                    if (!InChiKeyFromCH_SMILES.equals(InChiKeyFromCH_IUPAC)) {
-                        return context.failure("InChIKey generated from SMILES string in \"CH$SMILES\" field does not match InChIKey from \"CH$IUPAC\".\n"
-                            + "InChIKey from CH$SMILES: " + InChiKeyFromCH_SMILES + "\n"
-                            + "InChIKey from CH$IUPAC:  " + InChiKeyFromCH_IUPAC);
-                    }
-                }
-
-                //compare formula
-                if ("N/A".equals(callback.CH_FORMULA()))
-                    return context.failure("If CH$IUPAC is defined, CH$FORMULA can not be \"N/A\".");
-                // this code compares the molecular formula from the InChI with CH$FORMULA
-                String formulaFromInChI = MolecularFormulaManipulator.getString(MolecularFormulaManipulator.getMolecularFormula(fromCH_IUPAC));
-                logger.trace("Formula from CH$FORMULA: " + callback.CH_FORMULA());
-                logger.trace("Formula from CH$IUPAC:   " + formulaFromInChI);
-                if (!formulaFromInChI.equals(callback.CH_FORMULA())) {
-                    return context.failure("Formula generated from InChI string in \"CH$IUPAC\" field does not match formula in \"CH$FORMULA\".\n"
-                        + "Formula from CH$IUPAC:   " + formulaFromInChI + "\n"
-                        + "Formula from CH$FORMULA: " + callback.CH_FORMULA());
-                }
-
-                if (!weak) {
-                    //compare InChIKey
-                    if (InChiKeyFromCH_LINK.equals("")) {
-                        logger.warn("CH$IUPAC is defined, but CH$LINK: INCHIKEY is missing.");
-                    }
-                }
-            } else if (!"N/A".equals(callback.CH_SMILES())) {
-                if (!smilesHasWildcards)
-                    return context.failure("If CH$SMILES is defined, CH$IUPAC can not be \"N/A\".");
-                logger.trace("SMILES with wildcards defined");
-            }
-
-
-            // validate the number of peaks in the peaklist
-            List<Triple<BigDecimal, BigDecimal, Integer>> pk_peak = callback.PK_PEAK();
-            if (pk_peak.size() != pk_num_peak) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("Incorrect number of peaks in peaklist. ");
-                sb.append(pk_num_peak + " peaks are declared in PK$NUM_PEAK line, but " + pk_peak.size() + " peaks are found.\n");
-                return context.failure(sb.toString());
-            }
-
-
-            // validate the SPLASH
-            List<Ion> ions = new ArrayList<Ion>();
-            for (Triple<BigDecimal, BigDecimal, Integer> peak : pk_peak) {
-                ions.add(new Ion(peak.getLeft().doubleValue(), peak.getMiddle().doubleValue()));
-            }
-            Splash splashFactory = SplashFactory.create();
-            Spectrum spectrum = new SpectrumImpl(ions, SpectraType.MS);
-            String splash_from_peaks = splashFactory.splashIt(spectrum);
-            String splash_from_record = callback.PK_SPLASH();
-            if (!splash_from_peaks.equals(splash_from_record)) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("SPLASH from record file does not match SPLASH calculated from peaklist. ");
-                sb.append(splash_from_record + " defined in record file, but " + splash_from_peaks + " calculated from peaks.\n");
-                return context.failure(sb.toString());
-            }
-
-
-            // check peak sorting
-            for (int i = 0; i < pk_peak.size() - 1; i++) {
-                if ((pk_peak.get(i).getLeft().compareTo(pk_peak.get(i + 1).getLeft())) >= 0) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("The peaks in the peak list are not sorted.\n");
-                    sb.append("Error in line " + pk_peak.get(i).toString() + ".\n");
-                    return context.failure(sb.toString());
-                }
-            }
-
-            // check annotation sorting
-            List<Pair<BigDecimal, List<String>>> pk_annotation = callback.PK_ANNOTATION();
-            for (int i = 0; i < pk_annotation.size() - 1; i++) {
-                if ((pk_annotation.get(i).getLeft().compareTo(pk_annotation.get(i + 1).getLeft())) > 0) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("The peaks in the annotation list are not sorted.\n");
-                    sb.append("Error in line " + pk_annotation.get(i).toString() + ".\n");
-                    return context.failure(sb.toString());
-                }
-            }
-
-            // max 600 characters are supported in database for PUBLICATION
-            if (callback.PUBLICATION() != null) {
-                if (callback.PUBLICATION().length() > 600) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("PUBLICATION length exeeds database limit of 600 characters.\n");
-                    return context.failure(sb.toString());
-                }
-            }
-
-            // max 600 characters are supported in database for RECORD_TITLE
-            if (callback.RECORD_TITLE1().length() > 600) {
-                return context.failure("RECORD_TITLE length exeeds database limit of 600 characters.\n");
-            }
-
-
-            // check for duplicate entries in CH$NAME
-            List<String> ch_name = callback.CH_NAME();
-            Set<String> duplicates = new LinkedHashSet<String>();
-            Set<String> uniques = new HashSet<String>();
-            for (String c : ch_name) {
-                if (!uniques.add(c)) {
-                    duplicates.add(c);
-                }
-            }
-            if (duplicates.size() > 0) {
-                if (!weak) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("There are duplicate entries in \"CH$NAME\" field.");
-                    return context.failure(sb.toString());
-                } else {
-                    logger.warn("There are duplicate entries in \"CH$NAME\" field.");
-                }
-            }
-
-            // check for duplicate entries in AC$MASS_SPECTROMETRY
-            List<String> subtags = callback.AC_MASS_SPECTROMETRY().stream().map(p -> p.getKey()).collect(Collectors.toList());
-            Set<String> duplicates1 = new LinkedHashSet<String>();
-            Set<String> uniques1 = new HashSet<String>();
-            for (String c : subtags) {
-                if (!uniques1.add(c)) {
-                    duplicates1.add(c);
-                }
-            }
-            if (duplicates1.size() > 0) {
-                //if (!weak) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("There are duplicate subtags in \"AC$MASS_SPECTROMETRY\" field.");
-                return context.failure(sb.toString());
-                //} else {
-                //	logger.warn("There are duplicate subtags in \"AC$MASS_SPECTROMETRY\" field.");
-                //}
-            }
-
-
-            // check things online
-            if (online) {
-                if (callback.CH_LINK().containsKey("INCHIKEY")) {
-                    String inchiKey = callback.CH_LINK().get("INCHIKEY");
-                    if (callback.CH_LINK().containsKey("PUBCHEM")) {
-                        String pubChem = callback.CH_LINK().get("PUBCHEM");
-                        PubchemResolver pr = new PubchemResolver(inchiKey);
-                        Integer preferredCid = pr.getPreferred();
-                        if (preferredCid != null) {
-                            if (!pubChem.equals("CID:" + preferredCid)) {
-                                StringBuilder sb = new StringBuilder();
-                                sb.append("CH$LINK: PUBCHEM lists " + pubChem + "\n");
-                                sb.append("but PUG rest reports CID:" + preferredCid + " preferred PubChem CID\n");
-                                sb.append("for InChIKey " + inchiKey + ".");
-                                return context.failure(sb.toString());
-                            }
-                        } else {
-                            StringBuilder sb = new StringBuilder();
-                            sb.append("CH$LINK: PUBCHEM lists " + pubChem + "\n");
-                            sb.append("but PUG rest reports no CID\n");
-                            sb.append("for InChIKey " + inchiKey + ".");
-                            return context.failure(sb.toString());
-                        }
-                    }
-                }
-            }
-
-        }
+//        if (r.isSuccess() && !callback.DEPRECATED()) {
+//            // if any structural information is in CH$IUPAC, then CH$FORMULA, CH$SMILES CH$LINK: INCHIKEY must be defined and match
+//            if (!"N/A".equals(callback.CH_IUPAC())) {
+//                //compare SMILES
+//                if ("N/A".equals(callback.CH_SMILES()))
+//                    return context.failure("If CH$IUPAC is defined, CH$SMILES can not be \"N/A\".");
+//                // compare the structures in CH$SMILES and CH$IUPAC with the help of InChIKeys
+//                logger.trace("InChIKey from CH$SMILES: " + InChiKeyFromCH_SMILES);
+//                logger.trace("InChIKey from CH$IUPAC:  " + InChiKeyFromCH_IUPAC);
+//
+//                // in legacy mode only check field1 of InChIKey
+//                if (legacy) {
+//                    if (InChiKeyFromCH_SMILES.length() != 27 || InChiKeyFromCH_IUPAC.length() != 27 || !InChiKeyFromCH_SMILES.substring(0, 14).equals(InChiKeyFromCH_IUPAC.substring(0, 14))) {
+//                        return context.failure("InChIKey generated from SMILES string in \"CH$SMILES\" field does not match InChIKey from \"CH$IUPAC\".\n"
+//                            + "InChIKey from CH$SMILES: " + InChiKeyFromCH_SMILES + "\n"
+//                            + "InChIKey from CH$IUPAC:  " + InChiKeyFromCH_IUPAC);
+//                    }
+//                } else {
+//                    if (!InChiKeyFromCH_SMILES.equals(InChiKeyFromCH_IUPAC)) {
+//                        return context.failure("InChIKey generated from SMILES string in \"CH$SMILES\" field does not match InChIKey from \"CH$IUPAC\".\n"
+//                            + "InChIKey from CH$SMILES: " + InChiKeyFromCH_SMILES + "\n"
+//                            + "InChIKey from CH$IUPAC:  " + InChiKeyFromCH_IUPAC);
+//                    }
+//                }
+//
+//                //compare formula
+//                if ("N/A".equals(callback.CH_FORMULA()))
+//                    return context.failure("If CH$IUPAC is defined, CH$FORMULA can not be \"N/A\".");
+//                // this code compares the molecular formula from the InChI with CH$FORMULA
+//                String formulaFromInChI = MolecularFormulaManipulator.getString(MolecularFormulaManipulator.getMolecularFormula(fromCH_IUPAC));
+//                logger.trace("Formula from CH$FORMULA: " + callback.CH_FORMULA());
+//                logger.trace("Formula from CH$IUPAC:   " + formulaFromInChI);
+//                if (!formulaFromInChI.equals(callback.CH_FORMULA())) {
+//                    return context.failure("Formula generated from InChI string in \"CH$IUPAC\" field does not match formula in \"CH$FORMULA\".\n"
+//                        + "Formula from CH$IUPAC:   " + formulaFromInChI + "\n"
+//                        + "Formula from CH$FORMULA: " + callback.CH_FORMULA());
+//                }
+//
+//                if (!weak) {
+//                    //compare InChIKey
+//                    if (InChiKeyFromCH_LINK.equals("")) {
+//                        logger.warn("CH$IUPAC is defined, but CH$LINK: INCHIKEY is missing.");
+//                    }
+//                }
+//            } else if (!"N/A".equals(callback.CH_SMILES())) {
+//                if (!smilesHasWildcards)
+//                    return context.failure("If CH$SMILES is defined, CH$IUPAC can not be \"N/A\".");
+//                logger.trace("SMILES with wildcards defined");
+//            }
+//
+//
+//            // validate the number of peaks in the peaklist
+//            List<Triple<BigDecimal, BigDecimal, Integer>> pk_peak = callback.PK_PEAK();
+//            if (pk_peak.size() != pk_num_peak) {
+//                StringBuilder sb = new StringBuilder();
+//                sb.append("Incorrect number of peaks in peaklist. ");
+//                sb.append(pk_num_peak + " peaks are declared in PK$NUM_PEAK line, but " + pk_peak.size() + " peaks are found.\n");
+//                return context.failure(sb.toString());
+//            }
+//
+//
+//            // validate the SPLASH
+//            List<Ion> ions = new ArrayList<Ion>();
+//            for (Triple<BigDecimal, BigDecimal, Integer> peak : pk_peak) {
+//                ions.add(new Ion(peak.getLeft().doubleValue(), peak.getMiddle().doubleValue()));
+//            }
+//            Splash splashFactory = SplashFactory.create();
+//            Spectrum spectrum = new SpectrumImpl(ions, SpectraType.MS);
+//            String splash_from_peaks = splashFactory.splashIt(spectrum);
+//            String splash_from_record = callback.PK_SPLASH();
+//            if (!splash_from_peaks.equals(splash_from_record)) {
+//                StringBuilder sb = new StringBuilder();
+//                sb.append("SPLASH from record file does not match SPLASH calculated from peaklist. ");
+//                sb.append(splash_from_record + " defined in record file, but " + splash_from_peaks + " calculated from peaks.\n");
+//                return context.failure(sb.toString());
+//            }
+//
+//
+//            // check peak sorting
+//            for (int i = 0; i < pk_peak.size() - 1; i++) {
+//                if ((pk_peak.get(i).getLeft().compareTo(pk_peak.get(i + 1).getLeft())) >= 0) {
+//                    StringBuilder sb = new StringBuilder();
+//                    sb.append("The peaks in the peak list are not sorted.\n");
+//                    sb.append("Error in line " + pk_peak.get(i).toString() + ".\n");
+//                    return context.failure(sb.toString());
+//                }
+//            }
+//
+//            // check annotation sorting
+//            List<Pair<BigDecimal, List<String>>> pk_annotation = callback.PK_ANNOTATION();
+//            for (int i = 0; i < pk_annotation.size() - 1; i++) {
+//                if ((pk_annotation.get(i).getLeft().compareTo(pk_annotation.get(i + 1).getLeft())) > 0) {
+//                    StringBuilder sb = new StringBuilder();
+//                    sb.append("The peaks in the annotation list are not sorted.\n");
+//                    sb.append("Error in line " + pk_annotation.get(i).toString() + ".\n");
+//                    return context.failure(sb.toString());
+//                }
+//            }
+//
+//            // max 600 characters are supported in database for PUBLICATION
+//            if (callback.PUBLICATION() != null) {
+//                if (callback.PUBLICATION().length() > 600) {
+//                    StringBuilder sb = new StringBuilder();
+//                    sb.append("PUBLICATION length exeeds database limit of 600 characters.\n");
+//                    return context.failure(sb.toString());
+//                }
+//            }
+//
+//            // max 600 characters are supported in database for RECORD_TITLE
+//            if (callback.RECORD_TITLE1().length() > 600) {
+//                return context.failure("RECORD_TITLE length exeeds database limit of 600 characters.\n");
+//            }
+//
+//
+//            // check for duplicate entries in CH$NAME
+//            List<String> ch_name = callback.CH_NAME();
+//            Set<String> duplicates = new LinkedHashSet<String>();
+//            Set<String> uniques = new HashSet<String>();
+//            for (String c : ch_name) {
+//                if (!uniques.add(c)) {
+//                    duplicates.add(c);
+//                }
+//            }
+//            if (duplicates.size() > 0) {
+//                if (!weak) {
+//                    StringBuilder sb = new StringBuilder();
+//                    sb.append("There are duplicate entries in \"CH$NAME\" field.");
+//                    return context.failure(sb.toString());
+//                } else {
+//                    logger.warn("There are duplicate entries in \"CH$NAME\" field.");
+//                }
+//            }
+//
+//            // check for duplicate entries in AC$MASS_SPECTROMETRY
+//            List<String> subtags = callback.AC_MASS_SPECTROMETRY().stream().map(p -> p.getKey()).collect(Collectors.toList());
+//            Set<String> duplicates1 = new LinkedHashSet<String>();
+//            Set<String> uniques1 = new HashSet<String>();
+//            for (String c : subtags) {
+//                if (!uniques1.add(c)) {
+//                    duplicates1.add(c);
+//                }
+//            }
+//            if (duplicates1.size() > 0) {
+//                //if (!weak) {
+//                StringBuilder sb = new StringBuilder();
+//                sb.append("There are duplicate subtags in \"AC$MASS_SPECTROMETRY\" field.");
+//                return context.failure(sb.toString());
+//                //} else {
+//                //	logger.warn("There are duplicate subtags in \"AC$MASS_SPECTROMETRY\" field.");
+//                //}
+//            }
+//
+//
+//            // check things online
+//            if (online) {
+//                if (callback.CH_LINK().containsKey("INCHIKEY")) {
+//                    String inchiKey = callback.CH_LINK().get("INCHIKEY");
+//                    if (callback.CH_LINK().containsKey("PUBCHEM")) {
+//                        String pubChem = callback.CH_LINK().get("PUBCHEM");
+//                        PubchemResolver pr = new PubchemResolver(inchiKey);
+//                        Integer preferredCid = pr.getPreferred();
+//                        if (preferredCid != null) {
+//                            if (!pubChem.equals("CID:" + preferredCid)) {
+//                                StringBuilder sb = new StringBuilder();
+//                                sb.append("CH$LINK: PUBCHEM lists " + pubChem + "\n");
+//                                sb.append("but PUG rest reports CID:" + preferredCid + " preferred PubChem CID\n");
+//                                sb.append("for InChIKey " + inchiKey + ".");
+//                                return context.failure(sb.toString());
+//                            }
+//                        } else {
+//                            StringBuilder sb = new StringBuilder();
+//                            sb.append("CH$LINK: PUBCHEM lists " + pubChem + "\n");
+//                            sb.append("but PUG rest reports no CID\n");
+//                            sb.append("for InChIKey " + inchiKey + ".");
+//                            return context.failure(sb.toString());
+//                        }
+//                    }
+//                }
+//            }
+//
+//        }
         return r;
     }
 

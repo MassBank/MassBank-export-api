@@ -1,7 +1,10 @@
 package de.ipb_halle.massbank3_export_service.api;
 
 import massbank.RecordParser;
+import massbank.Record;
 
+import massbank.RecordToNIST_MSP;
+import massbank.RecordToRIKEN_MSP;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.petitparser.context.Result;
@@ -14,9 +17,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
@@ -26,6 +31,9 @@ public class DataReader {
 
     @Value("${MB_DATA_DIRECTORY}")
     private String dataDirectory;
+    public static Map<String, String> recordToRecordString;
+    public static Map<String, String> recordToNISTMSP;
+    public static Map<String, String> recordToRIKENMSP;
 
     @EventListener(ApplicationReadyEvent.class)
     public void readDataAfterStartup() {
@@ -34,6 +42,7 @@ public class DataReader {
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + dataDirectoryPath + "/*/*.txt");
         AtomicInteger progressCounter = new AtomicInteger(0);
         RecordParser recordparser = new RecordParser(Set.of("legacy"));
+        List<Record> recordData = List.of();
 
         if (Files.exists(dataDirectoryPath) && Files.isDirectory(dataDirectoryPath)) {
             try (Stream<Path> paths = Files.walk(dataDirectoryPath)
@@ -43,7 +52,7 @@ public class DataReader {
                 logger.info("Found {} record files in the directory", recordFiles.size());
                 int totalRecords = recordFiles.size();
 
-                long recordCount = recordFiles.parallelStream()
+                recordData = recordFiles.parallelStream()
                     .map(filename -> {
                         try {
                             return Files.readString(filename, StandardCharsets.UTF_8);
@@ -55,20 +64,38 @@ public class DataReader {
                     .filter(Objects::nonNull)
                     .map(recordparser::parse)
                     .filter(Result::isSuccess)
-                    .map(Result::get)
+                    .map(result -> (Record) result.get())
                     .peek(record -> {
                         int progress = progressCounter.incrementAndGet();
                         if (progress % (totalRecords / 10) == 0) {
                             logger.info("Progress: {}/{}", progress, totalRecords);
                         }
                     })
-                    .count();
-                logger.info("Read {} records", recordCount);
+                    .toList();
+                logger.info("Read {} records", recordData.size());
             } catch (IOException e) {
                 logger.error("Error finding record files in data directory", e);
             }
         } else {
             logger.error("The specified directory does not exist or is not a directory: {}", dataDirectory);
         }
+        recordToRecordString = recordData.parallelStream()
+            .collect(Collectors.toMap(
+                Record::ACCESSION,
+                Record::toString
+            ));
+        logger.info("Created record text lookup for {} records", recordToRecordString.size());
+        recordToNISTMSP = recordData.parallelStream()
+            .collect(Collectors.toMap(
+                Record::ACCESSION,
+                RecordToNIST_MSP::convert
+            ));
+        logger.info("Created NIST msp text lookup for {} records", recordToNISTMSP.size());
+        recordToRIKENMSP = recordData.parallelStream()
+            .collect(Collectors.toMap(
+                Record::ACCESSION,
+                RecordToRIKEN_MSP::convert
+            ));
+        logger.info("Created RIKEN msp lookup for {} records", recordToRIKENMSP.size());
     }
 }

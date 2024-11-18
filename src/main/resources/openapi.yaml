@@ -32,9 +32,10 @@ paths:
         "200":
           description: Conversion successfully completed.
           content:
-            text/plain; charset=utf-8:
+            application/octet-stream:
               schema:
                 type: string
+                format: binary
 
 components:
   schemas:
