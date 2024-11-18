@@ -1,7 +1,6 @@
 package de.ipb_halle.massbank3_export_service.api;
 
 import massbank.RecordParser;
-import massbank.Record;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,12 +28,12 @@ public class DataReader {
     private String dataDirectory;
 
     @EventListener(ApplicationReadyEvent.class)
-    public void readDataAfterStartup() throws IOException {
+    public void readDataAfterStartup() {
         logger.info("Application started with data directory: {}", dataDirectory);
         Path dataDirectoryPath = Paths.get(dataDirectory);
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + dataDirectoryPath + "/*/*.txt");
         AtomicInteger progressCounter = new AtomicInteger(0);
-
+        RecordParser recordparser = new RecordParser(Set.of("legacy"));
 
         if (Files.exists(dataDirectoryPath) && Files.isDirectory(dataDirectoryPath)) {
             try (Stream<Path> paths = Files.walk(dataDirectoryPath)
@@ -43,8 +42,6 @@ public class DataReader {
                 List<Path> recordFiles = paths.toList();
                 logger.info("Found {} record files in the directory", recordFiles.size());
                 int totalRecords = recordFiles.size();
-
-                RecordParser recordparser = new RecordParser(Set.of("legacy"));
 
                 long recordCount = recordFiles.parallelStream()
                     .map(filename -> {
@@ -56,14 +53,9 @@ public class DataReader {
                         }
                     })
                     .filter(Objects::nonNull)
-                    .map(recordString -> {
-                        Result res = recordparser.parse(recordString);
-                        if (res.isFailure()) {
-                            return null;
-                        }
-                        return res.get();
-                    })
-                    .filter(Objects::nonNull)
+                    .map(recordparser::parse)
+                    .filter(Result::isSuccess)
+                    .map(Result::get)
                     .peek(record -> {
                         int progress = progressCounter.incrementAndGet();
                         if (progress % (totalRecords / 10) == 0) {
