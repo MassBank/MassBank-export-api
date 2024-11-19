@@ -41,32 +41,32 @@ components:
   schemas:
     record_list:
       description: a list of records
-      type: object
-      properties:
-        record_list:
-          type: array
-          items:
-            type: string
-          example:
-            - MSBNK-IPB_Halle-PB001341
-            - MSBNK-IPB_Halle-PB006202
-            - MSBNK-IPB_Halle-PB006203
-            - MSBNK-IPB_Halle-PB001342
-            - MSBNK-IPB_Halle-PB001343
+      type: array
+      items:
+        type: string
+      example:
+        - MSBNK-IPB_Halle-PB001341
+        - MSBNK-IPB_Halle-PB006202
+        - MSBNK-IPB_Halle-PB006203
+        - MSBNK-IPB_Halle-PB001342
+        - MSBNK-IPB_Halle-PB001343
 
     format:
       description: a supported output format
-      type: object
-      properties:
-        format:
-          type: string
-          enum:
-            - nist_msp
-            - riken_msp
-          example: nist_msp
+      type: string
+      enum:
+        - nist_msp
+        - riken_msp
+      example: nist_msp
 
     conversion:
       description: a conversion task
-      allOf:
-        - $ref: "#/components/schemas/record_list"
-        - $ref: "#/components/schemas/format"
+      type: object
+      properties:
+        record_list:
+          $ref: "#/components/schemas/record_list"
+        format:
+          $ref: "#/components/schemas/format"
+#      allOf:
+#        - $ref: "#/components/schemas/record_list"
+#        - $ref: "#/components/schemas/format"

@@ -42,7 +42,6 @@ public class DataReader {
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + dataDirectoryPath + "/*/*.txt");
         AtomicInteger progressCounter = new AtomicInteger(0);
         RecordParser recordparser = new RecordParser(Set.of("legacy"));
-        List<Record> recordData = List.of();
 
         if (Files.exists(dataDirectoryPath) && Files.isDirectory(dataDirectoryPath)) {
             try (Stream<Path> paths = Files.walk(dataDirectoryPath)
@@ -52,7 +51,7 @@ public class DataReader {
                 logger.info("Found {} record files in the directory", recordFiles.size());
                 int totalRecords = recordFiles.size();
 
-                recordData = recordFiles.parallelStream()
+                List<Record> recordData = recordFiles.parallelStream()
                     .map(filename -> {
                         try {
                             return Files.readString(filename, StandardCharsets.UTF_8);
@@ -73,29 +72,33 @@ public class DataReader {
                     })
                     .toList();
                 logger.info("Read {} records", recordData.size());
+
+                recordToRecordString = recordData.parallelStream()
+                    .collect(Collectors.toMap(
+                        Record::ACCESSION,
+                        Record::toString
+                    ));
+                logger.info("Created record text lookup for {} records", recordToRecordString.size());
+
+                recordToNISTMSP = recordData.parallelStream()
+                    .collect(Collectors.toMap(
+                        Record::ACCESSION,
+                        RecordToNIST_MSP::convert
+                    ));
+                logger.info("Created NIST msp text lookup for {} records", recordToNISTMSP.size());
+
+                recordToRIKENMSP = recordData.parallelStream()
+                    .collect(Collectors.toMap(
+                        Record::ACCESSION,
+                        RecordToRIKEN_MSP::convert
+                    ));
+                logger.info("Created RIKEN msp lookup for {} records", recordToRIKENMSP.size());
             } catch (IOException e) {
                 logger.error("Error finding record files in data directory", e);
             }
         } else {
             logger.error("The specified directory does not exist or is not a directory: {}", dataDirectory);
         }
-        recordToRecordString = recordData.parallelStream()
-            .collect(Collectors.toMap(
-                Record::ACCESSION,
-                Record::toString
-            ));
-        logger.info("Created record text lookup for {} records", recordToRecordString.size());
-        recordToNISTMSP = recordData.parallelStream()
-            .collect(Collectors.toMap(
-                Record::ACCESSION,
-                RecordToNIST_MSP::convert
-            ));
-        logger.info("Created NIST msp text lookup for {} records", recordToNISTMSP.size());
-        recordToRIKENMSP = recordData.parallelStream()
-            .collect(Collectors.toMap(
-                Record::ACCESSION,
-                RecordToRIKEN_MSP::convert
-            ));
-        logger.info("Created RIKEN msp lookup for {} records", recordToRIKENMSP.size());
+
     }
 }

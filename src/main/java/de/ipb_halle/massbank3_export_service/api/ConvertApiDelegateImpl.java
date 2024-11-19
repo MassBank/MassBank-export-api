@@ -3,7 +3,6 @@ package de.ipb_halle.massbank3_export_service.api;
 
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import de.ipb_halle.massbank3_export_service.model.Conversion;
@@ -12,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static de.ipb_halle.massbank3_export_service.api.DataReader.recordToRecordString;
+import static de.ipb_halle.massbank3_export_service.api.DataReader.*;
 
 
 @Service
@@ -27,17 +26,27 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
     @Override
     public ResponseEntity<org.springframework.core.io.Resource> convertPost(Conversion conversion) {
         System.out.println("Conversion task received: " + conversion);
+        String responseBody = switch (conversion.getFormat().getValue()) {
+            case "nist_msp" -> conversion.getRecordList().stream()
+                .map(recordToNISTMSP::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining("\n"));
+            case "riken_msp" -> conversion.getRecordList().stream()
+                .map(recordToRIKENMSP::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining("\n"));
+            default -> conversion.getRecordList().stream()
+                .map(recordToRecordString::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining("\n"));
+        };
 
-        String concatenatedRecords = conversion.getRecordList().stream()
-            .map(recordToRecordString::get)
-            .filter(Objects::nonNull)
-            .collect(Collectors.joining("\n"));
-
-        ByteArrayResource resource = new ByteArrayResource(concatenatedRecords.getBytes(StandardCharsets.UTF_8));
+        ByteArrayResource resource = new ByteArrayResource(responseBody.getBytes(StandardCharsets.UTF_8));
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=converted_records.txt");
 
+        System.out.println(responseBody);
         return ResponseEntity.ok()
             .headers(headers)
             .contentLength(resource.contentLength())
