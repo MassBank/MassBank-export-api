@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,6 +65,7 @@ public class DataReader {
                     .map(recordparser::parse)
                     .filter(Result::isSuccess)
                     .map(result -> (Record) result.get())
+                    .filter(Predicate.not(Record::DEPRECATED))
                     .peek(record -> {
                         int progress = progressCounter.incrementAndGet();
                         if (progress % (totalRecords / 10) == 0) {

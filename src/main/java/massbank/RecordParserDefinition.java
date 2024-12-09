@@ -1,21 +1,13 @@
 package massbank;
 
-import static org.petitparser.parser.primitive.CharacterParser.digit;
-import static org.petitparser.parser.primitive.CharacterParser.letter;
-import static org.petitparser.parser.primitive.CharacterParser.word;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.ResolverStyle;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
+import edu.ucdavis.fiehnlab.spectra.hash.core.Spectrum;
+import edu.ucdavis.fiehnlab.spectra.hash.core.Splash;
+import edu.ucdavis.fiehnlab.spectra.hash.core.SplashFactory;
+import edu.ucdavis.fiehnlab.spectra.hash.core.types.Ion;
+import edu.ucdavis.fiehnlab.spectra.hash.core.types.SpectraType;
+import edu.ucdavis.fiehnlab.spectra.hash.core.types.SpectrumImpl;
+import io.github.dan2097.jnainchi.InchiStatus;
+import io.github.dan2097.jnainchi.JnaInchi;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
@@ -39,14 +31,20 @@ import org.petitparser.parser.primitive.CharacterParser;
 import org.petitparser.parser.primitive.StringParser;
 import org.petitparser.tools.GrammarDefinition;
 
-import edu.ucdavis.fiehnlab.spectra.hash.core.Spectrum;
-import edu.ucdavis.fiehnlab.spectra.hash.core.Splash;
-import edu.ucdavis.fiehnlab.spectra.hash.core.SplashFactory;
-import edu.ucdavis.fiehnlab.spectra.hash.core.types.Ion;
-import edu.ucdavis.fiehnlab.spectra.hash.core.types.SpectraType;
-import edu.ucdavis.fiehnlab.spectra.hash.core.types.SpectrumImpl;
-import io.github.dan2097.jnainchi.InchiStatus;
-import io.github.dan2097.jnainchi.JnaInchi;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static org.petitparser.parser.primitive.CharacterParser.digit;
+import static org.petitparser.parser.primitive.CharacterParser.word;
 
 
 public class RecordParserDefinition extends GrammarDefinition {
@@ -54,15 +52,6 @@ public class RecordParserDefinition extends GrammarDefinition {
 
     // legacy mode to let validation pass on legacy records until they are fixed
     private final boolean legacy;
-    // weak validation mode to let validation pass for AddMetaData
-    private final boolean weak;
-    // turn on additional validation steps, which require online checks; slow!
-    private final boolean online;
-
-
-    //private String InChiKeyFromCH_LINK = "";
-    //private int pk_num_peak = -1;
-
 
     // load a list of strings from .config or resource folder
     private static List<String> getResourceFileAsList(String fileName) {
@@ -81,51 +70,54 @@ public class RecordParserDefinition extends GrammarDefinition {
 
     public RecordParserDefinition(Set<String> config) {
         this.legacy = config.contains("legacy");
-        this.weak = config.contains("weak");
-        this.online = config.contains("online");
 
         def("start",
             ref("ACCESSION").map(this::setACCESSION)
-                .seq(ref("RECORD_TITLE")).map(this::setRECORD_TITLE)
-                .seq(ref("DATE")).map(this::setDATE)
-                .seq(ref("AUTHORS")).map(this::setAUTHORS)
-                .seq(ref("LICENSE")).map(this::setLICENSE)
-                .seq(ref("COPYRIGHT").optional()).map(this::setCOPYRIGHT)
-                .seq(ref("PUBLICATION").optional()).map(this::setPUBLICATION)
-                .seq(ref("PROJECT").optional()).map(this::setPROJECT)
-                .seq(ref("COMMENT").optional()).map(this::setCOMMENT)
-                .seq(ref("CH$NAME")).map(this::setCH_NAME)
-                .seq(ref("CH$COMPOUND_CLASS").optional()).map(this::setCH_COMPOUND_CLASS)
-                .seq(ref("CH$FORMULA")).map(this::setCH_FORMULA)
-                .seq(ref("CH$EXACT_MASS")).map(this::setCH_EXACT_MASS)
-                .seq(ref("CH$SMILES")).map(this::setCH_SMILES)
-                .seq(ref("CH$IUPAC")).map(this::setCH_IUPAC)
-                .seq(ref("CH$LINK").optional()).map(this::setCH_LINK)
-                .seq(ref("SP$SCIENTIFIC_NAME").optional()).map(this::setSP_SCIENTIFIC_NAME)
-                .seq(ref("SP$LINEAGE").optional()).map(this::setSP_LINEAGE)
-                .seq(ref("SP$LINK").optional()).map(this::setSP_LINK)
-                .seq(ref("SP$SAMPLE").optional()).map(this::setSP_SAMPLE)
-                .seq(ref("AC$INSTRUMENT")).map(this::setAC_INSTRUMENT)
-                .seq(ref("AC$INSTRUMENT_TYPE")).map(this::setAC_INSTRUMENT_TYPE)
-                .seq(ref("AC$MASS_SPECTROMETRY_MS_TYPE")).map(this::setAC_MASS_SPECTROMETRY_MS_TYPE)
-                .seq(ref("AC$MASS_SPECTROMETRY_ION_MODE")).map(this::setAC_MASS_SPECTROMETRY_ION_MODE)
-                .seq(ref("AC$MASS_SPECTROMETRY").optional()).map(this::setAC_MASS_SPECTROMETRY)
-                .seq(ref("AC$CHROMATOGRAPHY").optional()).map(this::setAC_CHROMATOGRAPHY)
-                .seq(ref("MS$FOCUSED_ION").optional()).map(this::setMS_FOCUSED_ION)
-                .seq(ref("MS$DATA_PROCESSING").optional()).map(this::setMS_DATA_PROCESSING)
-                .seq(ref("PK$SPLASH")).map(this::setPK_SPLASH)
-                .seq(ref("PK$ANNOTATION").optional()).map(this::setPK_ANNOTATION)
-                .seq(ref("PK$NUM_PEAK"))
-                .seq(ref("PK$PEAK")).map(this::setPK_PEAK)
-                .seq(ref("endtag"))
-                .pick(0)
-//                .map((Object value) -> {
+                .seq(ref("DEPRECATED")).map(this::setDEPRECATED)
+                .or(
+                    ref("ACCESSION").map(this::setACCESSION)
+                        .seq(ref("RECORD_TITLE")).map(this::setRECORD_TITLE)
+                        .seq(ref("DATE")).map(this::setDATE)
+                        .seq(ref("AUTHORS")).map(this::setAUTHORS)
+                        .seq(ref("LICENSE")).map(this::setLICENSE)
+                        .seq(ref("COPYRIGHT").optional()).map(this::setCOPYRIGHT)
+                        .seq(ref("PUBLICATION").optional()).map(this::setPUBLICATION)
+                        .seq(ref("PROJECT").optional()).map(this::setPROJECT)
+                        .seq(ref("COMMENT").optional()).map(this::setCOMMENT)
+                        .seq(ref("CH$NAME")).map(this::setCH_NAME)
+                        .seq(ref("CH$COMPOUND_CLASS").optional()).map(this::setCH_COMPOUND_CLASS)
+                        .seq(ref("CH$FORMULA")).map(this::setCH_FORMULA)
+                        .seq(ref("CH$EXACT_MASS")).map(this::setCH_EXACT_MASS)
+                        .seq(ref("CH$SMILES")).map(this::setCH_SMILES)
+                        .seq(ref("CH$IUPAC")).map(this::setCH_IUPAC)
+                        .seq(ref("CH$LINK").optional()).map(this::setCH_LINK)
+                        .seq(ref("SP$SCIENTIFIC_NAME").optional()).map(this::setSP_SCIENTIFIC_NAME)
+                        .seq(ref("SP$LINEAGE").optional()).map(this::setSP_LINEAGE)
+                        .seq(ref("SP$LINK").optional()).map(this::setSP_LINK)
+                        .seq(ref("SP$SAMPLE").optional()).map(this::setSP_SAMPLE)
+                        .seq(ref("AC$INSTRUMENT")).map(this::setAC_INSTRUMENT)
+                        .seq(ref("AC$INSTRUMENT_TYPE")).map(this::setAC_INSTRUMENT_TYPE)
+                        .seq(ref("AC$MASS_SPECTROMETRY_MS_TYPE")).map(this::setAC_MASS_SPECTROMETRY_MS_TYPE)
+                        .seq(ref("AC$MASS_SPECTROMETRY_ION_MODE")).map(this::setAC_MASS_SPECTROMETRY_ION_MODE)
+                        .seq(ref("AC$MASS_SPECTROMETRY").optional()).map(this::setAC_MASS_SPECTROMETRY)
+                        .seq(ref("AC$CHROMATOGRAPHY").optional()).map(this::setAC_CHROMATOGRAPHY)
+                        .seq(ref("MS$FOCUSED_ION").optional()).map(this::setMS_FOCUSED_ION)
+                        .seq(ref("MS$DATA_PROCESSING").optional()).map(this::setMS_DATA_PROCESSING)
+                        .seq(ref("PK$SPLASH")).map(this::setPK_SPLASH)
+                        .seq(ref("PK$ANNOTATION").optional()).map(this::setPK_ANNOTATION)
+                        .seq(ref("PK$NUM_PEAK"))
+                        .seq(ref("PK$PEAK")).map(this::setPK_PEAK)
+                        .seq(ref("endtag"))
+                        .pick(0)
+                        // check semantic here
+                        .callCC(config.contains("validate") ? this::checkSemantic : this::doNothing)
+                )
+//                .map((Record value) -> {
 //                    System.out.println(value);
 //                    return value;
 //                })
                 .end()
-            // check semantic here
-                .callCC(this::checkSemantic)
+
         );
 
 
@@ -218,24 +210,13 @@ public class RecordParserDefinition extends GrammarDefinition {
         );
 
 
-        def("deprecated_record",
+        def("DEPRECATED",
             StringParser.of("DEPRECATED")
                 .seq(ref("tagsep"))
-                .map((List<?> value) -> {
-                    //System.out.println(value);
-                    //callback.DEPRECATED(true);
-                    return value;
-                })
                 .seq(CharacterParser.any().star()
                     .flatten()
-                    .map((String value) -> {
-                        //System.out.println(value);
-                        //callback.DEPRECATED_CONTENT(value);
-                        return value;
-                    })
                 )
-                .end()
-                .optional()
+                .pick(2)
 //			.map((List<?> value) -> {
 //				System.out.println(value);
 //				return value;
@@ -290,7 +271,8 @@ public class RecordParserDefinition extends GrammarDefinition {
                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu.MM.dd").withResolverStyle(ResolverStyle.STRICT);
                             LocalDate.parse(r.get(), formatter);
                         } catch (Exception e) {
-                            return context.failure("Can not parse DATE:\n" + e.getMessage());
+                            logger.error("Can not parse DATE:{}", e.getMessage());
+                            return context.failure("Can not parse DATE:" + e.getMessage());
                         }
                     }
                     return r;
@@ -472,8 +454,8 @@ public class RecordParserDefinition extends GrammarDefinition {
                             if (r.isSuccess()) {
                                 String comment = r.get();
                                 if ("CONFIDENCE".equals(comment.trim())) {
-                                    logger.error("Empty 'COMMENT: CONFIDENCE' field.");
-                                    return context.failure("Empty 'COMMENT: CONFIDENCE' field.");
+                                    logger.error("Empty 'COMMENT: CONFIDENCE' field not allowed.");
+                                    return context.failure("Empty 'COMMENT: CONFIDENCE' field not allowed.");
                                 }
 
                             }
@@ -539,13 +521,17 @@ public class RecordParserDefinition extends GrammarDefinition {
                         .map((List<?> value) -> {
                             List<String> result = new ArrayList<>();
                             if (value.get(0) != null) {
-                                result.add((String) value.getFirst());
+                                result.add((String) value.get(0));
                             }
                             if (value.get(1) != null) {
-                                result.addAll((List<String>) value.get(1));
+                                List<?> sublist = (List<?>) value.get(1);
+                                for (Object item : sublist) {
+                                    result.add((String) item);
+                                }
                             }
                             return result;
                         })
+
                 )
                 .seq(Token.NEWLINE_PARSER)
                 .pick(2)
@@ -553,6 +539,7 @@ public class RecordParserDefinition extends GrammarDefinition {
 //                    System.out.println(value);
 //                    return value;
 //                })
+
         );
 
 
@@ -800,7 +787,7 @@ public class RecordParserDefinition extends GrammarDefinition {
                 .seq(ch_link_subtag)
                 .seq(Token.NEWLINE_PARSER.not()).pick(2)
                 .seq(CharacterParser.any().plusLazy(Token.NEWLINE_PARSER).flatten())
-                .map((List<String> value) -> Pair.of(value.getFirst().trim(), value.get(1)))
+                .map((List<String> value) -> Pair.of(value.get(0).trim(), value.get(1)))
                 .seq(Token.NEWLINE_PARSER)
                 .pick(0)
                 .plus()
@@ -811,7 +798,8 @@ public class RecordParserDefinition extends GrammarDefinition {
                         Set<String> seenKeys = new HashSet<>();
                         for (Pair<String, String> pair : p) {
                             if (!seenKeys.add(pair.getKey())) {
-                                return context.failure("Duplicate entry " + pair.getKey() + " in CH$LINK.\n");
+                                logger.error("Duplicate entry {} in CH$LINK.", pair.getKey());
+                                return context.failure("Duplicate entry " + pair.getKey() + " in CH$LINK.");
                             }
                         }
                     }
@@ -876,7 +864,7 @@ public class RecordParserDefinition extends GrammarDefinition {
                 .seq(CharacterParser.any().plusLazy(CharacterParser.whitespace()).flatten())
                 .seq(CharacterParser.whitespace()).pick(3)
                 .seq(CharacterParser.any().plusLazy(Token.NEWLINE_PARSER).flatten())
-                .map((List<String> value) -> Pair.of(value.getFirst().trim(), value.get(1)))
+                .map((List<String> value) -> Pair.of(value.get(0).trim(), value.get(1)))
                 .seq(Token.NEWLINE_PARSER)
                 .pick(0)
                 .plus()
@@ -965,7 +953,7 @@ public class RecordParserDefinition extends GrammarDefinition {
                 .seq(ref("ac_instrument_type_ionisation"))
                 .seq(ref("ac_instrument_type_analyzer"))
                 .map((List<String> value) -> {
-                    if (value.getFirst() == null) value.removeFirst();
+                    if (value.get(0) == null) value.remove(0);
                     return String.join("-", value);
                 })
         );
@@ -1171,7 +1159,7 @@ public class RecordParserDefinition extends GrammarDefinition {
                             CharacterParser.letter().or(CharacterParser.digit()).or(CharacterParser.of('_')).or(CharacterParser.of('/'))
                                 .plus().flatten()
                                 .map((String value) -> {
-                                    logger.warn("Usage of free subtag \"" + value + "\" in AC$MASS_SPECTROMETRY is not recomended.");
+                                    logger.warn("Usage of free subtag \"{}\" in AC$MASS_SPECTROMETRY is not recomended.", value);
                                     return value;
                                 })
                                 .seq(CharacterParser.whitespace()).flatten()
@@ -1180,7 +1168,7 @@ public class RecordParserDefinition extends GrammarDefinition {
                         )
                 )
                 .seq(Token.NEWLINE_PARSER).pick(2)
-                .map((List<String> value) -> Pair.of(value.getFirst().trim(), value.get(1)))
+                .map((List<String> value) -> Pair.of(value.get(0).trim(), value.get(1)))
                 .plus()
 //                .map((Object value) -> {
 //                    System.out.println(value);
@@ -1255,7 +1243,7 @@ public class RecordParserDefinition extends GrammarDefinition {
                         CharacterParser.letter().or(CharacterParser.digit()).or(CharacterParser.of('_'))
                             .plus().flatten()
                             .map((String value) -> {
-                                logger.warn("Usage of free subtag \"" + value + "\" in AC$CHROMATOGRAPHY is not recomended.");
+                                logger.warn("Usage of free subtag \"{}\" in AC$CHROMATOGRAPHY is not recomended.", value);
                                 return value;
                             })
                             .seq(CharacterParser.whitespace()).flatten()
@@ -1263,7 +1251,7 @@ public class RecordParserDefinition extends GrammarDefinition {
                 )
                 .seq(Token.NEWLINE_PARSER.not()).pick(2)
                 .seq(CharacterParser.any().plusLazy(Token.NEWLINE_PARSER).flatten())
-                .map((List<String> value) -> Pair.of(value.getFirst().trim(), value.get(1)))
+                .map((List<String> value) -> Pair.of(value.get(0).trim(), value.get(1)))
                 .seq(Token.NEWLINE_PARSER).pick(0)
                 .plus()
 //                .map((Object value) -> {
@@ -1415,7 +1403,7 @@ public class RecordParserDefinition extends GrammarDefinition {
                         )
                 )
                 .seq(Token.NEWLINE_PARSER).pick(2)
-                .map((List<String> value) -> Pair.of(value.getFirst().trim(), value.get(1)))
+                .map((List<String> value) -> Pair.of(value.get(0).trim(), value.get(1)))
                 .plus()
 //                .map((Object value) -> {
 //                    System.out.println(value);
@@ -1453,7 +1441,7 @@ public class RecordParserDefinition extends GrammarDefinition {
                 .seq(ref("ms_data_processing_subtag"))
                 .seq(Token.NEWLINE_PARSER.not()).pick(2)
                 .seq(CharacterParser.any().plusLazy(Token.NEWLINE_PARSER).flatten())
-                .map((List<String> value) -> Pair.of(value.getFirst().trim(), value.get(1)))
+                .map((List<String> value) -> Pair.of(value.get(0).trim(), value.get(1)))
                 .seq(Token.NEWLINE_PARSER).pick(0)
                 .plus()
 //                .map((Object value) -> {
@@ -1498,7 +1486,7 @@ public class RecordParserDefinition extends GrammarDefinition {
                         .trim(CharacterParser.of(' '))
                         .plus()
                         .map((List<String> value) -> {
-                            value.addFirst("m/z");
+                            value.add(0,"m/z");
                             return value;
                         })
                 )
@@ -1515,29 +1503,13 @@ public class RecordParserDefinition extends GrammarDefinition {
                                 .trim(CharacterParser.of(' '))
                                 .plus()
                         )
-                        .map((List<?> value) -> Pair.of(new BigDecimal((String) value.getFirst()), (List<String>) value.get(1)))
-                        //TODO
-                        // call a Continuation Parser to validate the count of PK$ANNOTATION items per line
-//                        .callCC((Function<Context, Result> continuation, Context context) -> {
-//                            Result r = continuation.apply(context);
-//                            if (r.isSuccess()) {
-//                                List<String> pk_annotation_header = callback.PK_ANNOTATION_HEADER();
-//                                List<Pair<BigDecimal, List<String>>> pk_annotation = callback.PK_ANNOTATION();
-//                                Pair<BigDecimal, List<String>> pk_annotationItem = pk_annotation.get(pk_annotation.size() - 1);
-//                                if (pk_annotation_header.size() != pk_annotationItem.getRight().size() + 1) {
-//                                    StringBuilder sb = new StringBuilder();
-//                                    sb.append("Incorrect number of fields per PK$ANNOTATION line. ");
-//                                    sb.append(pk_annotation_header.size() + " fields expected, but " + (pk_annotationItem.getRight().size() + 1) + " fields found.\n");
-//                                    sb.append("Defined by:\n");
-//                                    sb.append("PK$ANNOTATION:");
-//                                    for (String pk_annotation_headerItem : callback.PK_ANNOTATION_HEADER())
-//                                        sb.append(" " + pk_annotation_headerItem);
-//                                    sb.append("  " + pk_annotationItem.getLeft() + " " + String.join(" ", pk_annotationItem.getRight()));
-//                                    return context.failure(sb.toString());
-//                                }
-//                            }
-//                            return r;
-//                        })
+                        .map((List<?> value) -> {
+                            BigDecimal mz = new BigDecimal((String) value.get(0));
+                            List<String> annotations = ((List<?>) value.get(1)).stream()
+                                .map(Object::toString)
+                                .collect(Collectors.toList());
+                            return Pair.of(mz, annotations);
+                        })
                         .seq(Token.NEWLINE_PARSER)
                         .pick(0)
                         .plus()
@@ -1579,7 +1551,7 @@ public class RecordParserDefinition extends GrammarDefinition {
                         .seq(
                             ref("uint_primitive")
                         )
-                        .map((List<String> value) -> Triple.of(new BigDecimal(value.getFirst()),
+                        .map((List<String> value) -> Triple.of(new BigDecimal(value.get(0)),
                             new BigDecimal(value.get(1)),
                             Integer.parseInt(value.get(2))))
                         .seq(Token.NEWLINE_PARSER)
@@ -1601,98 +1573,98 @@ public class RecordParserDefinition extends GrammarDefinition {
     }
 
     private Record setRECORD_TITLE(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.RECORD_TITLE1((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.RECORD_TITLE1((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setDATE(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.DATE((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.DATE((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setAUTHORS(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.AUTHORS((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.AUTHORS((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setLICENSE(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.LICENSE((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.LICENSE((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setCOPYRIGHT(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.COPYRIGHT((String) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null) record.COPYRIGHT((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setPUBLICATION(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.PUBLICATION((String) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null) record.PUBLICATION((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setPROJECT(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.PROJECT((String) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null) record.PROJECT((String) value.get(value.size()-1));
         return record;
     }
 
     @SuppressWarnings("unchecked")
     private Record setCOMMENT(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.COMMENT((List<String>) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null) record.COMMENT((List<String>) value.get(value.size()-1));
         return record;
     }
 
     @SuppressWarnings("unchecked")
     private Record setCH_NAME(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.CH_NAME((List<String>) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null) record.CH_NAME((List<String>) value.get(value.size()-1));
         return record;
     }
 
     @SuppressWarnings("unchecked")
     private Record setCH_COMPOUND_CLASS(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.CH_COMPOUND_CLASS((List<String>) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null) record.CH_COMPOUND_CLASS((List<String>) value.get(value.size()-1));
         return record;
     }
 
     private Record setCH_FORMULA(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.CH_FORMULA((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.CH_FORMULA((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setCH_EXACT_MASS(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.CH_EXACT_MASS((BigDecimal) value.getLast());
+        Record record = (Record) value.get(0);
+        record.CH_EXACT_MASS((BigDecimal) value.get(value.size()-1));
         return record;
     }
 
     private Record setCH_SMILES(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.CH_SMILES((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.CH_SMILES((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setCH_IUPAC(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.CH_IUPAC((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.CH_IUPAC((String) value.get(value.size()-1));
         return record;
     }
 
     @SuppressWarnings("unchecked")
     private Record setCH_LINK(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) {
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null) {
             LinkedHashMap<String, String> map = new LinkedHashMap<>();
-            for (Pair<String, String> pair : (List<Pair<String, String>>) value.getLast()) {
+            for (Pair<String, String> pair : (List<Pair<String, String>>) value.get(value.size()-1)) {
                 map.put(pair.getKey(), pair.getValue());
             }
             record.CH_LINK(map);
@@ -1701,23 +1673,23 @@ public class RecordParserDefinition extends GrammarDefinition {
     }
 
     private Record setSP_SCIENTIFIC_NAME(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.SP_SCIENTIFIC_NAME((String) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null) record.SP_SCIENTIFIC_NAME((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setSP_LINEAGE(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.SP_LINEAGE((String) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null) record.SP_LINEAGE((String) value.get(value.size()-1));
         return record;
     }
 
     @SuppressWarnings("unchecked")
     private Record setSP_LINK(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) {
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null) {
             LinkedHashMap<String, String> map = new LinkedHashMap<>();
-            for (Pair<String, String> pair : (List<Pair<String, String>>) value.getLast()) {
+            for (Pair<String, String> pair : (List<Pair<String, String>>) value.get(value.size()-1)) {
                 map.put(pair.getKey(), pair.getValue());
             }
             record.SP_LINK(map);
@@ -1727,73 +1699,78 @@ public class RecordParserDefinition extends GrammarDefinition {
 
     @SuppressWarnings("unchecked")
     private Record setSP_SAMPLE(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.SP_SAMPLE((List<String>) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null) record.SP_SAMPLE((List<String>) value.get(value.size()-1));
         return record;
     }
 
     private Record setAC_INSTRUMENT(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.AC_INSTRUMENT((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.AC_INSTRUMENT((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setAC_INSTRUMENT_TYPE(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.AC_INSTRUMENT_TYPE((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.AC_INSTRUMENT_TYPE((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setAC_MASS_SPECTROMETRY_MS_TYPE(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.AC_MASS_SPECTROMETRY_MS_TYPE((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.AC_MASS_SPECTROMETRY_MS_TYPE((String) value.get(value.size()-1));
         return record;
     }
 
     private Record setAC_MASS_SPECTROMETRY_ION_MODE(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.AC_MASS_SPECTROMETRY_ION_MODE((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.AC_MASS_SPECTROMETRY_ION_MODE((String) value.get(value.size()-1));
         return record;
     }
 
     @SuppressWarnings("unchecked")
     private Record setAC_MASS_SPECTROMETRY(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.AC_MASS_SPECTROMETRY((List<Pair<String, String>>) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null)
+            record.AC_MASS_SPECTROMETRY((List<Pair<String, String>>) value.get(value.size()-1));
         return record;
     }
 
     @SuppressWarnings("unchecked")
     private Record setAC_CHROMATOGRAPHY(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.AC_CHROMATOGRAPHY((List<Pair<String, String>>) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null)
+            record.AC_CHROMATOGRAPHY((List<Pair<String, String>>) value.get(value.size()-1));
         return record;
     }
 
     @SuppressWarnings("unchecked")
     private Record setMS_FOCUSED_ION(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.MS_FOCUSED_ION((List<Pair<String, String>>) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null)
+            record.MS_FOCUSED_ION((List<Pair<String, String>>) value.get(value.size()-1));
         return record;
     }
 
     @SuppressWarnings("unchecked")
     private Record setMS_DATA_PROCESSING(List<?> value) {
-        Record record = (Record) value.getFirst();
-        if (value.getLast() != null) record.MS_DATA_PROCESSING((List<Pair<String, String>>) value.getLast());
+        Record record = (Record) value.get(0);
+        if (value.get(value.size()-1) != null)
+            record.MS_DATA_PROCESSING((List<Pair<String, String>>) value.get(value.size()-1));
         return record;
     }
 
     private Record setPK_SPLASH(List<?> value) {
-        Record record = (Record) value.getFirst();
-        record.PK_SPLASH((String) value.getLast());
+        Record record = (Record) value.get(0);
+        record.PK_SPLASH((String) value.get(value.size()-1));
         return record;
     }
 
+    @SuppressWarnings("unchecked")
     private Record setPK_ANNOTATION(List<?> value) {
-        Record record = (Record) value.getFirst();
+        Record record = (Record) value.get(0);
         if (value.get(1) != null) {
-            record.PK_ANNOTATION_HEADER((List<String>) ((List<?>) value.get(1)).getFirst());
+            record.PK_ANNOTATION_HEADER((List<String>) ((List<?>) value.get(1)).get(0));
             for (Pair<BigDecimal, List<String>> annotationLine : (List<Pair<BigDecimal, List<String>>>) ((List<?>) value.get(1)).get(1)) {
                 record.PK_ANNOTATION_ADD_LINE(annotationLine);
             }
@@ -1801,14 +1778,25 @@ public class RecordParserDefinition extends GrammarDefinition {
         return record;
     }
 
+    @SuppressWarnings("unchecked")
     private Record setPK_PEAK(List<?> value) {
-        Record record = (Record) value.getFirst();
+        Record record = (Record) value.get(0);
         for (Triple<BigDecimal, BigDecimal, Integer> peak : (List<Triple<BigDecimal, BigDecimal, Integer>>) value.get(2)) {
             record.PK_PEAK_ADD_LINE(peak);
         }
         return record;
     }
 
+    private Record setDEPRECATED(List<?> value) {
+        Record record = (Record) value.get(0);
+        record.DEPRECATED(true);
+        record.DEPRECATED_CONTENT((String) value.get(1));
+        return record;
+    }
+
+    private Result doNothing(Function<Context, Result> continuation, Context context) {
+        return continuation.apply(context);
+    }
 
     private Result checkSemantic(Function<Context, Result> continuation, Context context) {
         Result r = continuation.apply(context);
@@ -1822,14 +1810,15 @@ public class RecordParserDefinition extends GrammarDefinition {
                 String StringFromCH_FORMULA = MolecularFormulaManipulator.getString(fromCH_FORMULA);
                 if (!StringFromCH_FORMULA.equals(record.CH_FORMULA())) {
                     return context.failure("Can not read formula in \"CH$FORMULA\" field correctly.\n"
-                        + "Formula from CH$FORMULA: " +record.CH_FORMULA() + "\n"
+                        + "Formula from CH$FORMULA: " + record.CH_FORMULA() + "\n"
                         + "Formula after parsing  : " + StringFromCH_FORMULA);
                 }
             }
 
             // validate SMILES
             IAtomContainer fromCH_SMILES;
-            String InChiKeyFromCH_SMILES;
+            String InChiKeyFromCH_SMILES = null;
+            boolean smilesHasWildcards = false;
             if (!"N/A".equals(record.CH_SMILES())) {
                 try {
                     fromCH_SMILES = new SmilesParser(SilentChemObjectBuilder.getInstance()).parseSmiles(record.CH_SMILES());
@@ -1837,7 +1826,6 @@ public class RecordParserDefinition extends GrammarDefinition {
                     return context.failure("Can not parse SMILES string in \"CH$SMILES\" field.\nError from CDK:\n" + e.getMessage());
                 }
                 // create InChIKey from SMILES if it is a full defined structure
-                boolean smilesHasWildcards = false;
                 for (IAtom atom : fromCH_SMILES.atoms()) {
                     if (atom.getAtomicNumber() == 0) smilesHasWildcards = true;
                 }
@@ -1860,15 +1848,15 @@ public class RecordParserDefinition extends GrammarDefinition {
             }
 
             // validate InChI
-            IAtomContainer fromCH_IUPAC;
-            String InChiKeyFromCH_IUPAC;
+            IAtomContainer fromCH_IUPAC = null;
+            String InChiKeyFromCH_IUPAC = null;
             if (!"N/A".equals(record.CH_IUPAC())) {
                 try {
                     InChIToStructure intoStruct = InChIGeneratorFactory.getInstance().getInChIToStructure(record.CH_IUPAC(), SilentChemObjectBuilder.getInstance());
                     InchiStatus ret = intoStruct.getStatus();
                     if (ret == InchiStatus.WARNING) {
                         // Structure generated, but with warning message
-                        logger.warn("InChI warning: " + intoStruct.getMessage());
+                        logger.warn("InChI warning: {}", intoStruct.getMessage());
                         //logger.warn(callback.ACCESSION());
                     } else if (ret == InchiStatus.ERROR) {
                         // Structure generation failed
@@ -1882,186 +1870,162 @@ public class RecordParserDefinition extends GrammarDefinition {
                 InChiKeyFromCH_IUPAC = JnaInchi.inchiToInchiKey(record.CH_IUPAC()).getInchiKey();
             }
 
-
-
-
-
-            // compare the structure from CH$LINK, CH$SMILES and CH$IUPAC based on the InChIKey
-            String InChiKeyFromCH_LINK;
+            // get InChIKey from CH$LINK
+            String InChiKeyFromCH_LINK = null;
             if (record.CH_LINK().containsKey("INCHIKEY")) {
-                InChiKeyFromCH_LINK=record.CH_LINK().get("INCHIKEY");
+                InChiKeyFromCH_LINK = record.CH_LINK().get("INCHIKEY");
+                if ("N/A".equals(record.CH_IUPAC()))
+                    return context.failure("If INCHIKEY is given in CH$LINK, CH$IUPAC can not be \"N/A\".");
             }
 
-//                        if ("INCHIKEY".equals(p.getKey())) {
-//                            if (!p.getValue().equals(InChiKeyFromCH_IUPAC)) {
-//                                logger.error("InChIKey generated from InChI string in \"CH$IUPAC\" field does not match InChIKey in \"CH$LINK\".\n"
-//                                    + "CH$LINK: INCHIKEY:  " + p.getValue() + "\n"
-//                                    + "InChIKey generated: " + InChiKeyFromCH_IUPAC);
-//                                return context.failure("InChIKey generated from InChI string in \"CH$IUPAC\" field does not match InChIKey in \"CH$LINK\".\n"
-//                                    + "CH$LINK: INCHIKEY:  " + p.getValue() + "\n"
-//                                    + "InChIKey generated: " + InChiKeyFromCH_IUPAC);
-//                            }
-//                            InChiKeyFromCH_LINK=p.getValue();
-//                        }
-//                        ch_link.put(p.getKey(), p.getValue());
-//                        //callback.CH_LINK(ch_link);
-//                    }
-//                    return r;
-//                })
+            // if any structural information is in CH$IUPAC, then CH$FORMULA, CH$SMILES CH$LINK: INCHIKEY must be defined and match
+            if (!"N/A".equals(record.CH_IUPAC())) {
+                if (InChiKeyFromCH_IUPAC == null) throw new RuntimeException("unexpected condition");
+                // no N/A allowed
+                if ("N/A".equals(record.CH_SMILES()))
+                    return context.failure("If CH$IUPAC is defined, CH$SMILES can not be \"N/A\".");
+                if ("N/A".equals(record.CH_FORMULA()))
+                    return context.failure("If CH$IUPAC is defined, CH$FORMULA can not be \"N/A\".");
+                // check content of CH$SMILES for equality
+                if (InChiKeyFromCH_SMILES == null) throw new RuntimeException("unexpected condition");
+                logger.trace("InChIKey from CH$SMILES: {}", InChiKeyFromCH_SMILES);
+                logger.trace("InChIKey from CH$IUPAC:  {}", InChiKeyFromCH_IUPAC);
+                if (legacy) {
+                    if (InChiKeyFromCH_SMILES.length() != 27 || InChiKeyFromCH_IUPAC.length() != 27 || !InChiKeyFromCH_SMILES.substring(0, 14).equals(InChiKeyFromCH_IUPAC.substring(0, 14))) {
+                        return context.failure("InChIKey generated from SMILES string in \"CH$SMILES\" field does not match InChIKey from \"CH$IUPAC\".\n"
+                            + "InChIKey from CH$SMILES: " + InChiKeyFromCH_SMILES + "\n"
+                            + "InChIKey from CH$IUPAC:  " + InChiKeyFromCH_IUPAC);
+                    }
+                } else {
+                    if (!InChiKeyFromCH_SMILES.equals(InChiKeyFromCH_IUPAC)) {
+                        return context.failure("InChIKey generated from SMILES string in \"CH$SMILES\" field does not match InChIKey from \"CH$IUPAC\".\n"
+                            + "InChIKey from CH$SMILES: " + InChiKeyFromCH_SMILES + "\n"
+                            + "InChIKey from CH$IUPAC:  " + InChiKeyFromCH_IUPAC);
+                    }
+                }
+                // check for matching InChIKey in CH$LINK
+                if (InChiKeyFromCH_LINK != null && !InChiKeyFromCH_LINK.equals(InChiKeyFromCH_IUPAC)) {
+                    logger.error("InChIKey generated from InChI string in \"CH$IUPAC\" field does not match InChIKey in \"CH$LINK\".\n"
+                        + "CH$LINK: INCHIKEY:  " +InChiKeyFromCH_LINK + "\n"
+                        + "InChIKey generated: " + InChiKeyFromCH_IUPAC);
+                    return context.failure("InChIKey generated from InChI string in \"CH$IUPAC\" field does not match InChIKey in \"CH$LINK\".\n"
+                        + "CH$LINK: INCHIKEY:  " + InChiKeyFromCH_LINK + "\n"
+                        + "InChIKey generated: " + InChiKeyFromCH_IUPAC);
+                }
+                // check content of CH$FORMULA for equality
+                if (fromCH_IUPAC == null) throw new RuntimeException("unexpected condition");
+                String formulaFromInChI = MolecularFormulaManipulator.getString(MolecularFormulaManipulator.getMolecularFormula(fromCH_IUPAC));
+                logger.trace("Formula from CH$FORMULA: {}", record.CH_FORMULA());
+                logger.trace("Formula from CH$IUPAC:   {}", formulaFromInChI);
+                if (!formulaFromInChI.equals(record.CH_FORMULA())) {
+                    return context.failure("Formula generated from InChI string in \"CH$IUPAC\" field does not match formula in \"CH$FORMULA\".\n"
+                        + "Formula from CH$IUPAC:   " + formulaFromInChI + "\n"
+                        + "Formula from CH$FORMULA: " + record.CH_FORMULA());
+                }
+            }
+
+            if (!"N/A".equals(record.CH_SMILES())) {
+                // N/A in CH$IUPAC or CH$FORMULA are only allowed if SMILES string contains wildcards
+                if (!smilesHasWildcards) {
+                    if ("N/A".equals(record.CH_IUPAC()))
+                        return context.failure("If CH$SMILES is defined and without wildcards, CH$IUPAC can not be \"N/A\".");
+                    if ("N/A".equals(record.CH_FORMULA()))
+                        return context.failure("If CH$SMILES is defined and without wildcards, CH$FORMULA can not be \"N/A\".");
+                } else {
+                    logger.trace("SMILES with wildcards defined");
+                }
+            }
+
+            // validate the number of peaks in the peaklist
+            List<Triple<BigDecimal, BigDecimal, Integer>> pk_peak = record.PK_PEAK();
+            if (pk_peak.size() != record.PK_NUM_PEAK()) {
+                return context.failure("Incorrect number of peaks in peaklist. " + record.PK_NUM_PEAK()
+                    + " peaks are declared in PK$NUM_PEAK line, but " + pk_peak.size() + " peaks are found.");
+            }
+
+            // validate the SPLASH
+            List<Ion> ions = new ArrayList<>();
+            for (Triple<BigDecimal, BigDecimal, Integer> peak : pk_peak) {
+                ions.add(new Ion(peak.getLeft().doubleValue(), peak.getMiddle().doubleValue()));
+            }
+            Splash splashFactory = SplashFactory.create();
+            Spectrum spectrum = new SpectrumImpl(ions, SpectraType.MS);
+            String splash_from_peaks = splashFactory.splashIt(spectrum);
+            String splash_from_record = record.PK_SPLASH();
+            if (!splash_from_peaks.equals(splash_from_record)) {
+                return context.failure("SPLASH from record file does not match SPLASH calculated from peaklist. "
+                    + splash_from_record + " defined in record file, but " + splash_from_peaks + " calculated from peaks.");
+            }
+
+            // check peak sorting
+            for (int i = 0; i < pk_peak.size() - 1; i++) {
+                if ((pk_peak.get(i).getLeft().compareTo(pk_peak.get(i + 1).getLeft())) >= 0) {
+                    return context.failure("The peaks in the peak list are not sorted.\n"
+                        + "Error in line " + pk_peak.get(i).toString() + ".");
+                }
+            }
+
+            // max 600 characters are supported in database for PUBLICATION
+            if (record.PUBLICATION() != null) {
+                if (record.PUBLICATION().length() > 600) {
+                    return context.failure("PUBLICATION length exceeds database limit of 600 characters.");
+                }
+            }
+
+            // max 600 characters are supported in database for RECORD_TITLE
+            if (record.RECORD_TITLE1().length() > 600) {
+                return context.failure("RECORD_TITLE length exceeds database limit of 600 characters.");
+            }
+
+            // check for duplicate entries in CH$NAME
+            List<String> ch_name = record.CH_NAME();
+            Set<String> uniques = new HashSet<>();
+            for (String c : ch_name) {
+                if (!uniques.add(c)) {
+                    return context.failure("There are duplicate entries in \"CH$NAME\" field.");
+                }
+            }
+
+            // check for duplicate entries in AC$MASS_SPECTROMETRY
+            List<String> subtags = record.AC_MASS_SPECTROMETRY().stream().map(Pair::getKey).toList();
+            uniques = new HashSet<>();
+            for (String c : subtags) {
+                if (!uniques.add(c)) {
+                    return context.failure("There are duplicate subtags in \"AC$MASS_SPECTROMETRY\" field.");
+                }
+            }
+
+            // check annotation sorting
+            List<Pair<BigDecimal, List<String>>> pk_annotation = record.PK_ANNOTATION();
+            for (int i = 0; i < pk_annotation.size() - 1; i++) {
+                if ((pk_annotation.get(i).getLeft().compareTo(pk_annotation.get(i + 1).getLeft())) > 0) {
+                    return context.failure("The peaks in the annotation list are not sorted.\n"
+                        + "Error in line " + pk_annotation.get(i).toString() + ".");
+                }
+            }
+
+            // validate the count of PK$ANNOTATION items per line
+            List<String> pk_annotation_header = record.PK_ANNOTATION_HEADER();
+            for (Pair<BigDecimal, List<String>> pkAnnotationLine : pk_annotation) {
+                if (pk_annotation_header.size() != pkAnnotationLine.getRight().size() + 1) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Incorrect number of fields per PK$ANNOTATION line. ")
+                        .append(pk_annotation_header.size())
+                        .append(" fields expected, but ")
+                        .append(pkAnnotationLine.getRight().size() + 1)
+                        .append(" fields found.\n")
+                        .append("Defined by:\n")
+                        .append("PK$ANNOTATION:");
+                    for (String pk_annotation_headerItem : record.PK_ANNOTATION_HEADER())
+                        sb.append(" ").append(pk_annotation_headerItem);
+                    sb.append("  ").append(pkAnnotationLine.getLeft()).append(" ").append(String.join(" ", pkAnnotationLine.getRight()));
+                    return context.failure(sb.toString());
+                }
+            }
+
 
         }
-//            // if any structural information is in CH$IUPAC, then CH$FORMULA, CH$SMILES CH$LINK: INCHIKEY must be defined and match
-//            if (!"N/A".equals(callback.CH_IUPAC())) {
-//                //compare SMILES
-//                if ("N/A".equals(callback.CH_SMILES()))
-//                    return context.failure("If CH$IUPAC is defined, CH$SMILES can not be \"N/A\".");
-//                // compare the structures in CH$SMILES and CH$IUPAC with the help of InChIKeys
-//                logger.trace("InChIKey from CH$SMILES: " + InChiKeyFromCH_SMILES);
-//                logger.trace("InChIKey from CH$IUPAC:  " + InChiKeyFromCH_IUPAC);
-//
-//                // in legacy mode only check field1 of InChIKey
-//                if (legacy) {
-//                    if (InChiKeyFromCH_SMILES.length() != 27 || InChiKeyFromCH_IUPAC.length() != 27 || !InChiKeyFromCH_SMILES.substring(0, 14).equals(InChiKeyFromCH_IUPAC.substring(0, 14))) {
-//                        return context.failure("InChIKey generated from SMILES string in \"CH$SMILES\" field does not match InChIKey from \"CH$IUPAC\".\n"
-//                            + "InChIKey from CH$SMILES: " + InChiKeyFromCH_SMILES + "\n"
-//                            + "InChIKey from CH$IUPAC:  " + InChiKeyFromCH_IUPAC);
-//                    }
-//                } else {
-//                    if (!InChiKeyFromCH_SMILES.equals(InChiKeyFromCH_IUPAC)) {
-//                        return context.failure("InChIKey generated from SMILES string in \"CH$SMILES\" field does not match InChIKey from \"CH$IUPAC\".\n"
-//                            + "InChIKey from CH$SMILES: " + InChiKeyFromCH_SMILES + "\n"
-//                            + "InChIKey from CH$IUPAC:  " + InChiKeyFromCH_IUPAC);
-//                    }
-//                }
-//
-//                //compare formula
-//                if ("N/A".equals(callback.CH_FORMULA()))
-//                    return context.failure("If CH$IUPAC is defined, CH$FORMULA can not be \"N/A\".");
-//                // this code compares the molecular formula from the InChI with CH$FORMULA
-//                String formulaFromInChI = MolecularFormulaManipulator.getString(MolecularFormulaManipulator.getMolecularFormula(fromCH_IUPAC));
-//                logger.trace("Formula from CH$FORMULA: " + callback.CH_FORMULA());
-//                logger.trace("Formula from CH$IUPAC:   " + formulaFromInChI);
-//                if (!formulaFromInChI.equals(callback.CH_FORMULA())) {
-//                    return context.failure("Formula generated from InChI string in \"CH$IUPAC\" field does not match formula in \"CH$FORMULA\".\n"
-//                        + "Formula from CH$IUPAC:   " + formulaFromInChI + "\n"
-//                        + "Formula from CH$FORMULA: " + callback.CH_FORMULA());
-//                }
-//
-//                if (!weak) {
-//                    //compare InChIKey
-//                    if (InChiKeyFromCH_LINK.equals("")) {
-//                        logger.warn("CH$IUPAC is defined, but CH$LINK: INCHIKEY is missing.");
-//                    }
-//                }
-//            } else if (!"N/A".equals(callback.CH_SMILES())) {
-//                if (!smilesHasWildcards)
-//                    return context.failure("If CH$SMILES is defined, CH$IUPAC can not be \"N/A\".");
-//                logger.trace("SMILES with wildcards defined");
-//            }
-//
-//
-//            // validate the number of peaks in the peaklist
-//            List<Triple<BigDecimal, BigDecimal, Integer>> pk_peak = callback.PK_PEAK();
-//            if (pk_peak.size() != pk_num_peak) {
-//                StringBuilder sb = new StringBuilder();
-//                sb.append("Incorrect number of peaks in peaklist. ");
-//                sb.append(pk_num_peak + " peaks are declared in PK$NUM_PEAK line, but " + pk_peak.size() + " peaks are found.\n");
-//                return context.failure(sb.toString());
-//            }
-//
-//
-//            // validate the SPLASH
-//            List<Ion> ions = new ArrayList<Ion>();
-//            for (Triple<BigDecimal, BigDecimal, Integer> peak : pk_peak) {
-//                ions.add(new Ion(peak.getLeft().doubleValue(), peak.getMiddle().doubleValue()));
-//            }
-//            Splash splashFactory = SplashFactory.create();
-//            Spectrum spectrum = new SpectrumImpl(ions, SpectraType.MS);
-//            String splash_from_peaks = splashFactory.splashIt(spectrum);
-//            String splash_from_record = callback.PK_SPLASH();
-//            if (!splash_from_peaks.equals(splash_from_record)) {
-//                StringBuilder sb = new StringBuilder();
-//                sb.append("SPLASH from record file does not match SPLASH calculated from peaklist. ");
-//                sb.append(splash_from_record + " defined in record file, but " + splash_from_peaks + " calculated from peaks.\n");
-//                return context.failure(sb.toString());
-//            }
-//
-//
-//            // check peak sorting
-//            for (int i = 0; i < pk_peak.size() - 1; i++) {
-//                if ((pk_peak.get(i).getLeft().compareTo(pk_peak.get(i + 1).getLeft())) >= 0) {
-//                    StringBuilder sb = new StringBuilder();
-//                    sb.append("The peaks in the peak list are not sorted.\n");
-//                    sb.append("Error in line " + pk_peak.get(i).toString() + ".\n");
-//                    return context.failure(sb.toString());
-//                }
-//            }
-//
-//            // check annotation sorting
-//            List<Pair<BigDecimal, List<String>>> pk_annotation = callback.PK_ANNOTATION();
-//            for (int i = 0; i < pk_annotation.size() - 1; i++) {
-//                if ((pk_annotation.get(i).getLeft().compareTo(pk_annotation.get(i + 1).getLeft())) > 0) {
-//                    StringBuilder sb = new StringBuilder();
-//                    sb.append("The peaks in the annotation list are not sorted.\n");
-//                    sb.append("Error in line " + pk_annotation.get(i).toString() + ".\n");
-//                    return context.failure(sb.toString());
-//                }
-//            }
-//
-//            // max 600 characters are supported in database for PUBLICATION
-//            if (callback.PUBLICATION() != null) {
-//                if (callback.PUBLICATION().length() > 600) {
-//                    StringBuilder sb = new StringBuilder();
-//                    sb.append("PUBLICATION length exeeds database limit of 600 characters.\n");
-//                    return context.failure(sb.toString());
-//                }
-//            }
-//
-//            // max 600 characters are supported in database for RECORD_TITLE
-//            if (callback.RECORD_TITLE1().length() > 600) {
-//                return context.failure("RECORD_TITLE length exeeds database limit of 600 characters.\n");
-//            }
-//
-//
-//            // check for duplicate entries in CH$NAME
-//            List<String> ch_name = callback.CH_NAME();
-//            Set<String> duplicates = new LinkedHashSet<String>();
-//            Set<String> uniques = new HashSet<String>();
-//            for (String c : ch_name) {
-//                if (!uniques.add(c)) {
-//                    duplicates.add(c);
-//                }
-//            }
-//            if (duplicates.size() > 0) {
-//                if (!weak) {
-//                    StringBuilder sb = new StringBuilder();
-//                    sb.append("There are duplicate entries in \"CH$NAME\" field.");
-//                    return context.failure(sb.toString());
-//                } else {
-//                    logger.warn("There are duplicate entries in \"CH$NAME\" field.");
-//                }
-//            }
-//
-//            // check for duplicate entries in AC$MASS_SPECTROMETRY
-//            List<String> subtags = callback.AC_MASS_SPECTROMETRY().stream().map(p -> p.getKey()).collect(Collectors.toList());
-//            Set<String> duplicates1 = new LinkedHashSet<String>();
-//            Set<String> uniques1 = new HashSet<String>();
-//            for (String c : subtags) {
-//                if (!uniques1.add(c)) {
-//                    duplicates1.add(c);
-//                }
-//            }
-//            if (duplicates1.size() > 0) {
-//                //if (!weak) {
-//                StringBuilder sb = new StringBuilder();
-//                sb.append("There are duplicate subtags in \"AC$MASS_SPECTROMETRY\" field.");
-//                return context.failure(sb.toString());
-//                //} else {
-//                //	logger.warn("There are duplicate subtags in \"AC$MASS_SPECTROMETRY\" field.");
-//                //}
-//            }
-//
-//
+
 //            // check things online
 //            if (online) {
 //                if (callback.CH_LINK().containsKey("INCHIKEY")) {
