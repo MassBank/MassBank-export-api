@@ -1,8 +1,7 @@
 package de.ipb_halle.massbank3_export_service.api;
 
-import massbank.RecordParser;
 import massbank.Record;
-
+import massbank.RecordParser;
 import massbank.RecordToNIST_MSP;
 import massbank.RecordToRIKEN_MSP;
 import org.apache.logging.log4j.LogManager;
@@ -16,10 +15,10 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -42,7 +41,7 @@ public class DataReader {
         Path dataDirectoryPath = Paths.get(dataDirectory);
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + dataDirectoryPath + "/*/*.txt");
         AtomicInteger progressCounter = new AtomicInteger(0);
-        RecordParser recordparser = new RecordParser(Set.of("legacy"));
+        RecordParser recordparser = new RecordParser(new HashSet<>());
 
         if (Files.exists(dataDirectoryPath) && Files.isDirectory(dataDirectoryPath)) {
             try (Stream<Path> paths = Files.walk(dataDirectoryPath)

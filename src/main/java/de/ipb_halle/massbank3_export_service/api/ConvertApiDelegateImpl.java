@@ -1,11 +1,11 @@
 package de.ipb_halle.massbank3_export_service.api;
 
 
+import de.ipb_halle.massbank3_export_service.model.Conversion;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import de.ipb_halle.massbank3_export_service.model.Conversion;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -46,7 +46,6 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=converted_records.txt");
 
-        System.out.println(responseBody);
         return ResponseEntity.ok()
             .headers(headers)
             .contentLength(resource.contentLength())
