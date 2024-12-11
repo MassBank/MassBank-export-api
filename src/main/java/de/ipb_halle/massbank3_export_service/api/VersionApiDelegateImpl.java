@@ -2,6 +2,7 @@ package de.ipb_halle.massbank3_export_service.api;
 
 
 import com.google.gson.Gson;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,14 @@ public class VersionApiDelegateImpl implements VersionApiDelegate {
     @Override
     public ResponseEntity<String> versionGet() {
         Gson gson = new Gson();
-        System.out.println("versionGet");
-        return new ResponseEntity<>(gson.toJson("export service 0.1"),  HttpStatus.OK);
+        String versionInfo = String.format("export service %s, %s", artifactVersion, timestamp);
+        return new ResponseEntity<>(gson.toJson(versionInfo), HttpStatus.OK);
     }
+
+    @Value("${artifact.version}")
+    private String artifactVersion;
+
+    @Value("${timestamp}")
+    private String timestamp;
 
 }

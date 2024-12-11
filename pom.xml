@@ -17,7 +17,7 @@
     <properties>
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	<timestamp>2024-12-11T16:17:36+01:00</timestamp>
+	    <timestamp>2024-12-11T16:17:36+01:00</timestamp>
     </properties>
 
     <dependencies>
@@ -114,6 +114,12 @@
     </dependencyManagement>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
