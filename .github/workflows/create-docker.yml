@@ -29,6 +29,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
+          registry: quay.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -36,7 +37,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ipbhalle/massbank3-export-service
+          images: massbank/massbank3-export-service
           tags: |
             # tag event
             type=ref,event=tag
