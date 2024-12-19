@@ -19,6 +19,10 @@ release. This directory needs to be configured in the environment variable
 git clone https://github.com/MassBank/MassBank-data.git
 export MB_DATA_DIRECTORY="./MassBank-data"
 ```
+To configure CORS you can set the environment variable `CORS_ALLOWED_ORIGINS`.
+```bash
+export CORS_ALLOWED_ORIGINS=http://localhost:3000
+```
 
 ## Build and Run
 Build the service with Maven:
