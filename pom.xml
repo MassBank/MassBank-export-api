@@ -10,14 +10,14 @@
     </parent>
     <groupId>de.ipb-halle</groupId>
     <artifactId>massbank3-export-service</artifactId>
-    <version>v0.3</version>
+    <version>v0.4-SNAPSHOT</version>
     <name>massbank3-export-service</name>
     <description>Microservice for the export of different file formats for MassBank 3</description>
 
     <properties>
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	    <timestamp>2025-01-02T12:09:07+01:00</timestamp>
+	    <timestamp>2025-01-02T12:10:36+01:00</timestamp>
     </properties>
 
     <dependencies>
