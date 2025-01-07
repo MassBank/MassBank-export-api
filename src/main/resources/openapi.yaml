@@ -67,6 +67,3 @@ components:
           $ref: "#/components/schemas/record_list"
         format:
           $ref: "#/components/schemas/format"
-#      allOf:
-#        - $ref: "#/components/schemas/record_list"
-#        - $ref: "#/components/schemas/format"
