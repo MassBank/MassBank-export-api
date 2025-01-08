@@ -10,14 +10,14 @@
     </parent>
     <groupId>de.ipb-halle</groupId>
     <artifactId>massbank3-export-service</artifactId>
-    <version>v0.4-SNAPSHOT</version>
+    <version>v1.0</version>
     <name>massbank3-export-service</name>
     <description>Microservice for the export of different file formats for MassBank 3</description>
 
     <properties>
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	    <timestamp>2025-01-02T12:10:36+01:00</timestamp>
+	    <timestamp>2025-01-08T14:54:15+01:00</timestamp>
         <mockito.version>5.15.2</mockito.version>
     </properties>
 
@@ -26,10 +26,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-starter-validation</artifactId>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -41,11 +37,6 @@
             <artifactId>jackson-databind-nullable</artifactId>
             <version>0.2.6</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.google.code.gson</groupId>-->
-<!--            <artifactId>gson</artifactId>-->
-<!--            <version>2.11.0</version>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>org.openscience.cdk</groupId>
             <artifactId>cdk-bundle</artifactId>
@@ -58,11 +49,6 @@
 <!--            <version>2.4.2</version>-->
             <version>main-6a6cddc02c-1</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.apache.commons</groupId>-->
-<!--            <artifactId>commons-configuration2</artifactId>-->
-<!--            <version>2.11.0</version>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>edu.ucdavis.fiehnlab.splash</groupId>
             <artifactId>core</artifactId>
