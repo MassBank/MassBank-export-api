@@ -23,6 +23,19 @@ To configure CORS you can set the environment variable `CORS_ALLOWED_ORIGINS`.
 ```bash
 export CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
+To run it behind a reverse proxy one must configure some X-Forward 
+RequestHeader as descibed [here](https://springdoc.org/faq.html#_how_can_i_deploy_springdoc_openapi_starter_webmvc_ui_behind_a_reverse_proxy).
+Here is an example for Apache:
+```
+RequestHeader set X-Forwarded-Prefix "/MassBank3-export"
+RequestHeader set X-Forwarded-Proto https
+RequestHeader set X-Forwarded-Port 443
+```
+To make this work with a K8s nginx Ingress one needs to enable the property
+```
+use-forwarded-headers true
+```
+in the ingress-nginx-controller ConfigMap.
 
 ## Build and Run
 Build the service with Maven:
@@ -61,4 +74,4 @@ docker run -p 8080:8080 \
 quay.io/massbank/massbank3-export-service:latest
 ```
 
-For a description of the service browse to the [swagger UI](http://localhost:8080/swagger-ui/index.html).
+For a description of the service browse to the [Swagger UI](http://localhost:8080/swagger-ui/index.html).
