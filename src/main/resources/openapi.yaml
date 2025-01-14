@@ -36,7 +36,33 @@ paths:
               schema:
                 type: string
                 format: binary
-
+  /metadata/{accession}:
+    get:
+      summary: Get metadata for a given accession.
+      parameters:
+        - name: accession
+          in: path
+          required: true
+          schema:
+            type: string
+          example: MSBNK-IPB_Halle-PB001341
+      responses:
+        "200":
+          description: Metadata for the given accession.
+          content:
+            application/ld+json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  example:
+                    "@context": "https://schema.org"
+                    "@type": "Dataset"
+                    "name": "Example Dataset"
+                    "description": "This is an example dataset."
+                    "identifier": "MSBNK-IPB_Halle-PB001341"
+        "404":
+          description: Accession not found
 components:
   schemas:
     record_list:

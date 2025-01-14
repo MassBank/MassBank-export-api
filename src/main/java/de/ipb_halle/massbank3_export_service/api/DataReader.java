@@ -1,5 +1,6 @@
 package de.ipb_halle.massbank3_export_service.api;
 
+import com.google.gson.JsonArray;
 import massbank.Record;
 import massbank.RecordParser;
 import massbank.RecordToNIST_MSP;
@@ -34,6 +35,7 @@ public class DataReader {
     public static Map<String, String> recordToRecordString;
     public static Map<String, String> recordToNISTMSP;
     public static Map<String, String> recordToRIKENMSP;
+    public static Map<String, JsonArray> recordToMetadata;
 
     @EventListener(ApplicationReadyEvent.class)
     public void readDataAfterStartup() {
@@ -94,6 +96,12 @@ public class DataReader {
                         RecordToRIKEN_MSP::convert
                     ));
                 logger.info("Created RIKEN msp lookup for {} records", recordToRIKENMSP.size());
+                recordToMetadata = recordData.parallelStream()
+                    .collect(Collectors.toMap(
+                        Record::ACCESSION,
+                        Record::createStructuredDataJsonArray
+                    ));
+                logger.info("Created schema.org lookup for {} records", recordToRIKENMSP.size());
             } catch (IOException e) {
                 logger.error("Error finding record files in data directory", e);
             }
