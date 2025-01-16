@@ -6,6 +6,8 @@ import com.google.gson.JsonArray;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
 
 import java.util.List;
 
@@ -23,13 +25,14 @@ public class MetadataApiDelegateImpl implements MetadataApiDelegate {
      */
     @Override
     public ResponseEntity<List<Object>> metadataAccessionGet(String accession) {
-        JsonArray metadataArray = recordToMetadata.get(accession);
-
-        if (metadataArray == null) {
+        var record = recordMap.get(accession);
+        if (record == null) {
             return ResponseEntity.notFound().build();
         }
 
-        List<Object> metadataList = new Gson().fromJson(metadataArray, List.class);
+        JsonArray metadataArray = record.createStructuredDataJsonArray();
+        Type listType = new TypeToken<List<Object>>() {}.getType();
+        List<Object> metadataList = new Gson().fromJson(metadataArray, listType);
 
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_JSON)

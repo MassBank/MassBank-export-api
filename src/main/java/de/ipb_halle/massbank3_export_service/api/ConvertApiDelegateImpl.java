@@ -2,6 +2,9 @@ package de.ipb_halle.massbank3_export_service.api;
 
 
 import de.ipb_halle.massbank3_export_service.model.Conversion;
+import massbank.RecordToNIST_MSP;
+import massbank.RecordToRIKEN_MSP;
+import massbank.Record;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -28,16 +31,19 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
         System.out.println("Conversion task received: " + conversion);
         String responseBody = switch (conversion.getFormat().getValue()) {
             case "nist_msp" -> conversion.getRecordList().stream()
-                .map(recordToNISTMSP::get)
+                .map(recordMap::get)
                 .filter(Objects::nonNull)
+                .map(RecordToNIST_MSP::convert)
                 .collect(Collectors.joining("\n"));
             case "riken_msp" -> conversion.getRecordList().stream()
-                .map(recordToRIKENMSP::get)
+                .map(recordMap::get)
                 .filter(Objects::nonNull)
+                .map(RecordToRIKEN_MSP::convert)
                 .collect(Collectors.joining("\n"));
             default -> conversion.getRecordList().stream()
-                .map(recordToRecordString::get)
+                .map(recordMap::get)
                 .filter(Objects::nonNull)
+                .map(Record::toString)
                 .collect(Collectors.joining("\n"));
         };
 

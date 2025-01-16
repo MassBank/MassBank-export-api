@@ -1,10 +1,7 @@
 package de.ipb_halle.massbank3_export_service.api;
 
-import com.google.gson.JsonArray;
 import massbank.Record;
 import massbank.RecordParser;
-import massbank.RecordToNIST_MSP;
-import massbank.RecordToRIKEN_MSP;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.petitparser.context.Result;
@@ -29,11 +26,8 @@ public class DataReader {
     private static final Logger logger = LogManager.getLogger(DataReader.class);
 
     @Value("${MB_DATA_DIRECTORY}")
-    private String dataDirectory;
-    public static Map<String, String> recordToRecordString;
-    public static Map<String, String> recordToNISTMSP;
-    public static Map<String, String> recordToRIKENMSP;
-    public static Map<String, JsonArray> recordToMetadata;
+    public String dataDirectory;
+    public static Map<String, Record> recordMap;
 
     @EventListener(ApplicationReadyEvent.class)
     public void readDataAfterStartup() {
@@ -51,10 +45,7 @@ public class DataReader {
                 logger.info("Found {} record files in the directory", recordFiles.size());
                 int totalRecords = recordFiles.size();
 
-                recordToRecordString = new ConcurrentHashMap<>();
-                recordToNISTMSP = new ConcurrentHashMap<>();
-                recordToRIKENMSP = new ConcurrentHashMap<>();
-                recordToMetadata = new ConcurrentHashMap<>();
+                recordMap = new ConcurrentHashMap<>();
 
                 recordFiles.parallelStream().forEach(filename -> {
                     try {
@@ -64,10 +55,7 @@ public class DataReader {
                             Record record = result.get();
                             if (!record.DEPRECATED()) {
                                 String accession = record.ACCESSION();
-                                recordToRecordString.put(accession, record.toString());
-                                recordToNISTMSP.put(accession, RecordToNIST_MSP.convert(record));
-                                recordToRIKENMSP.put(accession, RecordToRIKEN_MSP.convert(record));
-                                recordToMetadata.put(accession, record.createStructuredDataJsonArray());
+                                recordMap.put(accession, record);
                             }
                         }
                     } catch (IOException e) {
@@ -78,11 +66,7 @@ public class DataReader {
                         logger.info("Progress: {}/{}", progress, totalRecords);
                     }
                 });
-
-                logger.info("Created record text lookup for {} records", recordToRecordString.size());
-                logger.info("Created NIST msp text lookup for {} records", recordToNISTMSP.size());
-                logger.info("Created RIKEN msp lookup for {} records", recordToRIKENMSP.size());
-                logger.info("Created schema.org lookup for {} records", recordToMetadata.size());
+                logger.info("Created record lookup for {} records", recordMap.size());
             } catch (IOException e) {
                 logger.error("Error finding record files in data directory", e);
             }
