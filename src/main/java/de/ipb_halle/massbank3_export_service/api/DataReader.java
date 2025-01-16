@@ -19,10 +19,8 @@ import java.nio.file.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
@@ -53,61 +51,43 @@ public class DataReader {
                 logger.info("Found {} record files in the directory", recordFiles.size());
                 int totalRecords = recordFiles.size();
 
-                List<Record> recordData = recordFiles.parallelStream()
-                    .map(filename -> {
-                        try {
-                            return Files.readString(filename, StandardCharsets.UTF_8);
-                        } catch (IOException e) {
-                            logger.error("Error reading file: {}", filename, e);
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .map(recordparser::parse)
-                    .filter(Result::isSuccess)
-                    .map(result -> (Record) result.get())
-                    .filter(Predicate.not(Record::DEPRECATED))
-                    .peek(record -> {
-                        int progress = progressCounter.incrementAndGet();
-                        if (progress % (totalRecords / 10) == 0) {
-                            logger.info("Progress: {}/{}", progress, totalRecords);
-                        }
-                    })
-                    .toList();
-                logger.info("Read {} records", recordData.size());
+                recordToRecordString = new ConcurrentHashMap<>();
+                recordToNISTMSP = new ConcurrentHashMap<>();
+                recordToRIKENMSP = new ConcurrentHashMap<>();
+                recordToMetadata = new ConcurrentHashMap<>();
 
-                recordToRecordString = recordData.parallelStream()
-                    .collect(Collectors.toMap(
-                        Record::ACCESSION,
-                        Record::toString
-                    ));
+                recordFiles.parallelStream().forEach(filename -> {
+                    try {
+                        String content = Files.readString(filename, StandardCharsets.UTF_8);
+                        Result result = recordparser.parse(content);
+                        if (result.isSuccess()) {
+                            Record record = result.get();
+                            if (!record.DEPRECATED()) {
+                                String accession = record.ACCESSION();
+                                recordToRecordString.put(accession, record.toString());
+                                recordToNISTMSP.put(accession, RecordToNIST_MSP.convert(record));
+                                recordToRIKENMSP.put(accession, RecordToRIKEN_MSP.convert(record));
+                                recordToMetadata.put(accession, record.createStructuredDataJsonArray());
+                            }
+                        }
+                    } catch (IOException e) {
+                        logger.error("Error reading file: {}", filename, e);
+                    }
+                    int progress = progressCounter.incrementAndGet();
+                    if (progress % (totalRecords / 10) == 0) {
+                        logger.info("Progress: {}/{}", progress, totalRecords);
+                    }
+                });
+
                 logger.info("Created record text lookup for {} records", recordToRecordString.size());
-
-                recordToNISTMSP = recordData.parallelStream()
-                    .collect(Collectors.toMap(
-                        Record::ACCESSION,
-                        RecordToNIST_MSP::convert
-                    ));
                 logger.info("Created NIST msp text lookup for {} records", recordToNISTMSP.size());
-
-                recordToRIKENMSP = recordData.parallelStream()
-                    .collect(Collectors.toMap(
-                        Record::ACCESSION,
-                        RecordToRIKEN_MSP::convert
-                    ));
                 logger.info("Created RIKEN msp lookup for {} records", recordToRIKENMSP.size());
-                recordToMetadata = recordData.parallelStream()
-                    .collect(Collectors.toMap(
-                        Record::ACCESSION,
-                        Record::createStructuredDataJsonArray
-                    ));
-                logger.info("Created schema.org lookup for {} records", recordToRIKENMSP.size());
+                logger.info("Created schema.org lookup for {} records", recordToMetadata.size());
             } catch (IOException e) {
                 logger.error("Error finding record files in data directory", e);
             }
         } else {
             logger.error("The specified directory does not exist or is not a directory: {}", dataDirectory);
         }
-
     }
 }
