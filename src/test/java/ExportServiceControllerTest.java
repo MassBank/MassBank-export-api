@@ -65,7 +65,7 @@ Num Peaks: 5
     public void testCreateConversionTaskRikenMSP() throws Exception {
         String requestBody = "{ \"record_list\": [\"MSBNK-IPB_Halle-PB001341\"], \"format\": \"riken_msp\" }";
         String expectedResponse = """
-NAME : Rutin
+NAME: Rutin
 PRECURSORMZ:\s
 PRECURSORTYPE: [M+H]+
 FORMULA: C27H30O16

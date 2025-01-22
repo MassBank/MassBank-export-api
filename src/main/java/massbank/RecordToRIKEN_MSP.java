@@ -76,7 +76,7 @@ public class RecordToRIKEN_MSP {
 			return sb.toString();
 		}
 		
-		sb.append("NAME : ").append(record.CH_NAME().get(0)).append(System.lineSeparator());
+		sb.append("NAME: ").append(record.CH_NAME().get(0)).append(System.lineSeparator());
 		Map<String, String> MS_FOCUSED_ION = record.MS_FOCUSED_ION_asMap();
 		sb.append("PRECURSORMZ: ").append((MS_FOCUSED_ION.getOrDefault("PRECURSOR_M/Z", ""))).append(System.lineSeparator());
 		sb.append("PRECURSORTYPE: ").append((MS_FOCUSED_ION.getOrDefault("PRECURSOR_TYPE", "NA"))).append(System.lineSeparator());
