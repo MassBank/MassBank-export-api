@@ -1,5 +1,6 @@
-package massbank;
+package massbank.export;
 
+import massbank.Record;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -79,7 +80,7 @@ public class RecordToNIST_MSP {
 	 * A plain converter Record to String with RIKEN PRIME msp.
 	 * @param record to convert
 	 */
-	public static String convert(Record record) {
+	public static String convert(massbank.Record record) {
 		StringBuilder sb = new StringBuilder();
 		
 		if (record.DEPRECATED()) {
@@ -148,7 +149,7 @@ There is one mandatory field, namely Parent=<m/z>, which is the precursor ion m/
 	 * @param file to write
 	 * @param records to convert
      */
-	public static void recordsToNIST_MSP(File file, List<Record> records) {
+	public static void recordsToNIST_MSP(File file, List<massbank.Record> records) {
 		// collect data
 		List<String> list	= new ArrayList<>();
 		for(Record record : records) {

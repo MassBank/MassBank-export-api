@@ -587,7 +587,7 @@ public class Record {
 				case "HMDB":
 					sb.append("<b>CH$LINK:</b> ").append(key).append(" <a href=\"http://www.hmdb.ca/metabolites/").append(value).append("\" target=\"_blank\">").append(value).append("</a><br>\n");
 					break;
-                case "KAPPAVIEW":
+				case "KAPPAVIEW":
 					sb.append("<b>CH$LINK:</b> ").append(key).append(" <a href=\"http://kpv.kazusa.or.jp/kpv4/compoundInformation/view.action?id=").append(value).append("\" target=\"_blank\">").append(value).append("</a><br>\n");
 					break;
 				case "KEGG":

@@ -66,7 +66,7 @@ public class DataReader {
                         logger.info("Progress: {}/{}", progress, totalRecords);
                     }
                 });
-                logger.info("Created record lookup for {} records", recordMap.size());
+                logger.info("Created record dict for {} records", recordMap.size());
             } catch (IOException e) {
                 logger.error("Error finding record files in data directory", e);
             }
