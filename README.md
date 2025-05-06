@@ -6,7 +6,7 @@ Spring Boot. It uses the RecordParserDefinition from the original
 [MassBank project](https://github.com/MassBank/MassBank-web). 
 
 ## Requirements
-- Java 21
+- Java 17
 - Spring Boot 3.4
 - maven
 
@@ -17,17 +17,17 @@ release. This directory needs to be configured in the environment variable
 `MB_DATA_DIRECTORY`.
 ```bash
 git clone https://github.com/MassBank/MassBank-data.git
-export MB_DATA_DIRECTORY="./MassBank-data"
+export MB_DATA_DIRECTORY="./MassBank-datagi"
 ```
 To configure CORS you can set the environment variable `CORS_ALLOWED_ORIGINS`.
 ```bash
 export CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
-To run it behind a reverse proxy one must configure some X-Forward 
-RequestHeader as descibed [here](https://springdoc.org/faq.html#_how_can_i_deploy_springdoc_openapi_starter_webmvc_ui_behind_a_reverse_proxy).
+To make the Swagger UI work behind a reverse proxy one must configure 
+some X-Forward RequestHeader as descibed [here](https://springdoc.org/faq.html#_how_can_i_deploy_springdoc_openapi_starter_webmvc_ui_behind_a_reverse_proxy).
 Here is an example for Apache:
 ```
-RequestHeader set X-Forwarded-Prefix "/MassBank3-export"
+RequestHeader set X-Forwarded-Prefix "/MassBank-export"
 RequestHeader set X-Forwarded-Proto https
 RequestHeader set X-Forwarded-Port 443
 ```
