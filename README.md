@@ -6,7 +6,7 @@ Spring Boot. It uses the RecordParserDefinition from the original
 [MassBank project](https://github.com/MassBank/MassBank-web). 
 
 ## Requirements
-- Java 17
+- Java 21
 - Spring Boot 3.4
 - maven
 
