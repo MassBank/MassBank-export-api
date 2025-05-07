@@ -1,7 +1,7 @@
-package de.ipb_halle.massbank3_export_service.api;
+package de.ipb_halle.massbank_export_api.api;
 
 
-import de.ipb_halle.massbank3_export_service.model.Conversion;
+import de.ipb_halle.massbank_export_api.model.Conversion;
 import massbank.export.RecordToNIST_MSP;
 import massbank.export.RecordToRIKEN_MSP;
 import massbank.Record;
@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static de.ipb_halle.massbank3_export_service.api.DataReader.*;
+import static de.ipb_halle.massbank_export_api.api.DataReader.*;
 
 
 @Service

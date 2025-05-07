@@ -1,4 +1,4 @@
-package de.ipb_halle.massbank3_export_service.api;
+package de.ipb_halle.massbank_export_api.api;
 
 import massbank.Record;
 import massbank.RecordParser;

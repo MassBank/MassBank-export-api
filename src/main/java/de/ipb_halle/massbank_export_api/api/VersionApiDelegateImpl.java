@@ -1,4 +1,4 @@
-package de.ipb_halle.massbank3_export_service.api;
+package de.ipb_halle.massbank_export_api.api;
 
 
 import com.google.gson.Gson;
@@ -19,7 +19,7 @@ public class VersionApiDelegateImpl implements VersionApiDelegate {
     @Override
     public ResponseEntity<String> versionGet() {
         Gson gson = new Gson();
-        String versionInfo = String.format("export service %s, %s", artifactVersion, timestamp);
+        String versionInfo = String.format("export api %s, %s", artifactVersion, timestamp);
         return new ResponseEntity<>(gson.toJson(versionInfo), HttpStatus.OK);
     }
 

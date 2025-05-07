@@ -37,7 +37,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: quay.io/massbank/massbank3-export-service
+          images: quay.io/massbank/massbank-export-api
           tags: |
             # tag event
             type=ref,event=tag

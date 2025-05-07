@@ -10,7 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(classes = org.openapitools.OpenApiGeneratorApplication.class)
 @AutoConfigureMockMvc
-public class ExportServiceControllerTest {
+public class ExportApiControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -20,7 +20,7 @@ public class ExportServiceControllerTest {
         mockMvc.perform(get("/version"))
             .andExpect(status().isOk())
             .andExpect(content().contentType("application/json"))
-            .andExpect(jsonPath("$").value(startsWith("export service ")));
+            .andExpect(jsonPath("$").value(startsWith("export api ")));
     }
 
     @Test

@@ -1,4 +1,4 @@
-package de.ipb_halle.massbank3_export_service.api;
+package de.ipb_halle.massbank_export_api.api;
 
 
 import com.google.gson.Gson;
@@ -11,7 +11,7 @@ import java.lang.reflect.Type;
 
 import java.util.List;
 
-import static de.ipb_halle.massbank3_export_service.api.DataReader.*;
+import static de.ipb_halle.massbank_export_api.api.DataReader.*;
 
 
 @Service
