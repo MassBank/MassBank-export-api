@@ -10,7 +10,7 @@
     </parent>
     <groupId>de.ipb-halle</groupId>
     <artifactId>massbank-export-api</artifactId>
-    <version>v1.7-SNAPSHOT</version>
+    <version>v1.7</version>
     <name>massbank-export-api</name>
     <description>Microservice for the export of different file formats for MassBank</description>
 
