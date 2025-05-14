@@ -36,6 +36,8 @@ To make this work with a K8s nginx Ingress one needs to enable the property
 use-forwarded-headers true
 ```
 in the ingress-nginx-controller ConfigMap.
+The application context path can be configured with the environment variable CONTEXT_PATH.
+If not set / is used by default.
 
 ## Build and Run
 Build the service with Maven:
