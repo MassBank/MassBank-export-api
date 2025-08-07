@@ -14,17 +14,15 @@ git checkout dev
 mvn versions:set -DnewVersion="$RELEASE_VERSION"
 mvn versions:commit
 git add pom.xml
-sed -i "s/\(<version>\)[0-9]\+\.[0-9]\+\.[0-9]\+\(-SNAPSHOT\)\?\(<\/version>\)/\1$RELEASE_VERSION\3/" README.md
-git add README.md
 git commit -m "Release version $RELEASE_VERSION"
 git push origin dev
 
 # 2. Nach main mergen
 git checkout main
 git merge dev
-#git push origin main
-#
-## 3. Release taggen und auf GitHub veröffentlichen
+git push origin main
+
+# 3. Release taggen und auf GitHub veröffentlichen
 git tag -a "v$RELEASE_VERSION" -m "Release version $RELEASE_VERSION"
 git push origin "v$RELEASE_VERSION"
 gh release create "v$RELEASE_VERSION" --title "Release v$RELEASE_VERSION" --notes "Release $RELEASE_VERSION"
