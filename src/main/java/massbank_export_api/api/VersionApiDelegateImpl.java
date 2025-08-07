@@ -1,4 +1,4 @@
-package de.ipb_halle.massbank_export_api.api;
+package massbank_export_api.api;
 
 
 import com.google.gson.Gson;

@@ -1,4 +1,4 @@
-package de.ipb_halle.massbank_export_api.api;
+package massbank_export_api.api;
 
 import massbank.Record;
 import massbank.RecordParser;
@@ -53,7 +53,7 @@ public class DataReader {
                         Result result = recordparser.parse(content);
                         if (result.isSuccess()) {
                             Record record = result.get();
-                            if (!record.DEPRECATED()) {
+                            if (!record.isDepricated()) {
                                 String accession = record.ACCESSION();
                                 recordMap.put(accession, record);
                             }

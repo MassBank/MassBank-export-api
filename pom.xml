@@ -1,28 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.5</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <version>3.5.4</version>
+        <relativePath/>
     </parent>
-    <groupId>de.ipb-halle</groupId>
+    <groupId>io.github.massbank</groupId>
     <artifactId>massbank-export-api</artifactId>
     <version>v1.9-SNAPSHOT</version>
-    <name>massbank-export-api</name>
+    <name>MassBank-export-api</name>
     <description>Microservice for the export of different file formats for MassBank</description>
 
     <properties>
-        <java.version>21</java.version>
-        <argLine/>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <timestamp>2025-02-12T15:13:00+01:00</timestamp>
-        <cdk.version>2.11</cdk.version>
+        <argLine/>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -30,7 +40,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.8.8</version>
+            <version>2.8.9</version>
         </dependency>
         <dependency>
             <groupId>org.openapitools</groupId>
@@ -38,48 +48,20 @@
             <version>0.2.6</version>
         </dependency>
         <dependency>
-            <groupId>org.openscience.cdk</groupId>
-            <artifactId>cdk-inchi</artifactId>
-            <version>${cdk.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openscience.cdk</groupId>
-            <artifactId>cdk-smiles</artifactId>
-            <version>${cdk.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openscience.cdk</groupId>
-            <artifactId>cdk-silent</artifactId>
-            <version>${cdk.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openscience.cdk</groupId>
-            <artifactId>cdk-formula</artifactId>
-            <version>${cdk.version}</version>
+            <groupId>io.github.massbank</groupId>
+            <artifactId>massbank-lib</artifactId>
+            <version>1.0.5</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.13.1</version>
         </dependency>
-        <!--use last working commit from master until a new tag is available-->
-        <dependency>
-            <groupId>com.github.petitparser.java-petitparser</groupId>
-            <artifactId>petitparser-core</artifactId>
-<!--            <version>2.4.2</version>-->
-            <version>main-6a6cddc02c-1</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.ucdavis.fiehnlab.splash</groupId>
-            <artifactId>core</artifactId>
-            <version>1.8</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.17.0</version>
+            <version>3.18.0</version>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -91,6 +73,25 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>5.13.4</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>2.25.1</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <resources>
@@ -108,8 +109,16 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.3</version>
+                <configuration>
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.6.1</version>
                 <executions>
                     <execution>
                         <id>enforce-maven</id>
@@ -119,21 +128,12 @@
                         <configuration>
                             <rules>
                                 <requireMavenVersion>
-                                    <version>3.8</version>
+                                    <version>3.6.3</version>
                                 </requireMavenVersion>
                             </rules>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.14.0</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -142,7 +142,7 @@
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.13.0</version>
+                <version>7.14.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -151,8 +151,8 @@
                         <configuration>
                             <inputSpec>${project.basedir}/src/main/resources/openapi.yaml</inputSpec>
                             <generatorName>spring</generatorName>
-                            <apiPackage>de.ipb-halle.massbank-export-api.api</apiPackage>
-                            <modelPackage>de.ipb-halle.massbank-export-api.model</modelPackage>
+                            <apiPackage>massbank_export_api.api</apiPackage>
+                            <modelPackage>massbank_export_api.model</modelPackage>
                             <configOptions>
                                 <useSpringBoot3>true</useSpringBoot3>
                                 <delegatePattern>true</delegatePattern>
@@ -173,25 +173,18 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
     <repositories>
         <repository>
-            <id>Jena-Bio</id>
-            <name>Jena Bio Repository libs-release-oss</name>
-            <url>https://bio.informatik.uni-jena.de/repository/libs-release-oss</url>
-        </repository>
-        <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
+        </repository>
+        <repository>
+            <id>github</id>
+            <name>GitHub MassBank Packages</name>
+            <url>https://maven.pkg.github.com/MassBank/massbank-lib</url>
         </repository>
     </repositories>
 </project>

@@ -9,12 +9,12 @@ on:
       - v*
 
 jobs:
-  build-and-push-images:
+  build_and_push_images:
+
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Login to quay.io
         uses: docker/login-action@v3
@@ -31,7 +31,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn clean package
+        run: mvn -B package
 
       - name: Docker meta
         id: meta

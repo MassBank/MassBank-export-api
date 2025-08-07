@@ -1,7 +1,7 @@
-package de.ipb_halle.massbank_export_api.api;
+package massbank_export_api.api;
 
 
-import de.ipb_halle.massbank_export_api.model.Conversion;
+import massbank_export_api.model.Conversion;
 import massbank.export.RecordToNIST_MSP;
 import massbank.export.RecordToRIKEN_MSP;
 import massbank.Record;
@@ -14,11 +14,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static de.ipb_halle.massbank_export_api.api.DataReader.*;
+import static massbank_export_api.api.DataReader.*;
 
 
 @Service
-public class ConvertApiDelegateImpl implements ConvertApiDelegate {
+public class ConvertApiDelegateImpl implements massbank_export_api.api.ConvertApiDelegate {
     /**
      * POST /convert : Create a conversion task.
      *
