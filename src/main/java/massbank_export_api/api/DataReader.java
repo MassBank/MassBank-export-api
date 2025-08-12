@@ -53,7 +53,7 @@ public class DataReader {
                         Result result = recordparser.parse(content);
                         if (result.isSuccess()) {
                             Record record = result.get();
-                            if (!record.isDepricated()) {
+                            if (!record.isDeprecated()) {
                                 String accession = record.ACCESSION();
                                 recordMap.put(accession, record);
                             }
