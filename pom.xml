@@ -13,8 +13,7 @@
 
     <groupId>io.github.massbank</groupId>
     <artifactId>massbank-export-api</artifactId>
-    <version>1.13</version>
-
+    <version>1.14-SNAPSHOT</version>
     <name>MassBank-export-api</name>
     <description>Microservice for the export of different file formats for MassBank</description>
 
