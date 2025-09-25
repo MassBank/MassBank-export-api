@@ -32,10 +32,26 @@ paths:
         "200":
           description: Conversion successfully completed.
           content:
-            application/octet-stream:
+            text/plain; charset=utf-8:
               schema:
                 type: string
                 format: binary
+              examples:
+                nist_msp:
+                  summary: NIST MSP
+                  description: msp file in NIST flavor
+                riken_msp:
+                  summary: RIKEN MSP
+                  description: msp file in RIKEN flavor
+            application/zip:
+              schema:
+                type: string
+                format: binary
+              examples:
+                massbank:
+                  summary: MassBank zip file
+                  description: zip file with seperate MassBank files
+
   /metadata/{accession}:
     get:
       summary: Get metadata for a given accession.
@@ -63,6 +79,30 @@ paths:
                     "identifier": "MSBNK-IPB_Halle-PB001341"
         "404":
           description: Accession not found
+
+  /rawtext/{accession}:
+    get:
+      summary: Get the original text of a given accession.
+      parameters:
+        - name: accession
+          in: path
+          required: true
+          schema:
+            type: string
+          example: MSBNK-IPB_Halle-PB001341
+      responses:
+        "200":
+          description: Metadata for the given accession.
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+              example: |
+                ACCESSION: MSBNK-IPB_Halle-PB001341
+                RECORD_TITLE: ...
+        "404":
+          description: Accession not found
+
 components:
   schemas:
     record_list:
@@ -83,6 +123,7 @@ components:
       enum:
         - nist_msp
         - riken_msp
+        - massbank
       example: nist_msp
 
     conversion:
