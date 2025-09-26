@@ -13,7 +13,7 @@
 
     <groupId>io.github.massbank</groupId>
     <artifactId>massbank-export-api</artifactId>
-    <version>1.16-SNAPSHOT</version>
+    <version>1.16</version>
     <name>MassBank-export-api</name>
     <description>Microservice for the export of different file formats for MassBank</description>
 
@@ -24,7 +24,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <cdk-version>2.11</cdk-version>
-        <timestamp>2025-09-25</timestamp>
+        <timestamp>2025-09-26</timestamp>
         <argLine/>
     </properties>
 
