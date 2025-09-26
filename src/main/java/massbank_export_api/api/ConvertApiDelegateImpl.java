@@ -36,11 +36,12 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
      */
     @Override
     public ResponseEntity<Resource> convertPost(Conversion conversion) {
+        String formatValue = conversion.getFormat() != null ? conversion.getFormat().getValue() : "";
         final ByteArrayResource resource;
         final String filename;
         final MediaType mediaType;
 
-        switch (Objects.requireNonNull(conversion.getFormat()).getValue()) {
+        switch (formatValue) {
             case "nist_msp":
                 mediaType = MediaType.TEXT_PLAIN;
                 filename = "records.msp";
@@ -90,18 +91,12 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 }
                 break;
             default:
-                mediaType = MediaType.TEXT_PLAIN;
-                filename = "records.txt";
-                resource = new ByteArrayResource(
-                        conversion.getRecordList().stream()
-                                .map(recordMap::get)
-                                .filter(Objects::nonNull)
-                                .map(Record::toString)
-                                .collect(Collectors.joining("\n"))
-                                .getBytes(StandardCharsets.UTF_8)
-                );
+                String message = "Missing or unsupported format value.";
+                resource = new ByteArrayResource(message.getBytes(StandardCharsets.UTF_8));
+                return ResponseEntity.badRequest()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(resource);
         };
-
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename);
