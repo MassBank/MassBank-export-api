@@ -45,26 +45,18 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
             case "nist_msp":
                 mediaType = MediaType.TEXT_PLAIN;
                 filename = "records.msp";
-                resource = new ByteArrayResource(
-                        conversion.getRecordList().stream()
-                                .map(recordMap::get)
-                                .filter(Objects::nonNull)
-                                .map(RecordToNIST_MSP::convert)
-                                .collect(Collectors.joining())
-                                .getBytes(StandardCharsets.UTF_8)
-                );
+                resource = new ByteArrayResource(RecordToNIST_MSP.convertRecords(conversion.getRecordList().stream()
+                        .map(recordMap::get)
+                        .filter(Objects::nonNull)
+                        .toList()).getBytes(StandardCharsets.UTF_8));
                 break;
             case "riken_msp":
                 mediaType = MediaType.TEXT_PLAIN;
                 filename = "records.msp";
-                resource = new ByteArrayResource(
-                        conversion.getRecordList().stream()
-                                .map(recordMap::get)
-                                .filter(Objects::nonNull)
-                                .map(RecordToRIKEN_MSP::convert)
-                                .collect(Collectors.joining())
-                                .getBytes(StandardCharsets.UTF_8)
-                );
+                resource = new ByteArrayResource(RecordToRIKEN_MSP.convertRecords(conversion.getRecordList().stream()
+                        .map(recordMap::get)
+                        .filter(Objects::nonNull)
+                        .toList()).getBytes(StandardCharsets.UTF_8));
                 break;
             case "massbank":
                 mediaType = MediaType.parseMediaType("application/zip");
@@ -102,10 +94,10 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename);
 
         return ResponseEntity.ok()
-            .headers(headers)
-            .contentLength(resource.contentLength())
-            .contentType(mediaType)
-            .body(resource);
+                .headers(headers)
+                .contentLength(resource.contentLength())
+                .contentType(mediaType)
+                .body(resource);
     }
 
 }
