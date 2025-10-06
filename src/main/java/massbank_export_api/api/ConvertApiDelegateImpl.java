@@ -1,10 +1,8 @@
 package massbank_export_api.api;
 
-
 import massbank_export_api.model.Conversion;
 import massbank.export.RecordToNIST_MSP;
 import massbank.export.RecordToRIKEN_MSP;
-import massbank.Record;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -23,14 +21,13 @@ import java.util.zip.ZipOutputStream;
 
 import static massbank_export_api.api.DataReader.*;
 
-
 @Primary
 @Service
 public class ConvertApiDelegateImpl implements ConvertApiDelegate {
     /**
      * POST /convert : Create a conversion task.
      *
-     * @param conversion  (required)
+     * @param conversion (required)
      * @return Conversion successfully completed. (status code 200)
      * @see ConvertApi#convertPost
      */
@@ -51,8 +48,7 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                                 .filter(Objects::nonNull)
                                 .map(RecordToNIST_MSP::convert)
                                 .collect(Collectors.joining())
-                                .getBytes(StandardCharsets.UTF_8)
-                );
+                                .getBytes(StandardCharsets.UTF_8));
                 break;
             case "riken_msp":
                 mediaType = MediaType.TEXT_PLAIN;
@@ -63,20 +59,19 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                                 .filter(Objects::nonNull)
                                 .map(RecordToRIKEN_MSP::convert)
                                 .collect(Collectors.joining())
-                                .getBytes(StandardCharsets.UTF_8)
-                );
+                                .getBytes(StandardCharsets.UTF_8));
                 break;
             case "massbank":
                 mediaType = MediaType.parseMediaType("application/zip");
                 filename = "records.zip";
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                     ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+                        ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
                     conversion.getRecordList().stream()
                             .map(recordMap::get)
                             .filter(Objects::nonNull)
                             .forEach(record -> {
                                 try {
-                                    ZipEntry entry = new ZipEntry(record.ACCESSION()+".txt");
+                                    ZipEntry entry = new ZipEntry(record.ACCESSION() + ".txt");
                                     zos.putNextEntry(entry);
                                     zos.write(record.toString().getBytes(StandardCharsets.UTF_8));
                                     zos.closeEntry();
@@ -94,18 +89,19 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 String message = "Missing or unsupported format value.";
                 resource = new ByteArrayResource(message.getBytes(StandardCharsets.UTF_8));
                 return ResponseEntity.badRequest()
-                    .contentType(MediaType.TEXT_PLAIN)
-                    .body(resource);
-        };
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .body(resource);
+        }
+        ;
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename);
 
         return ResponseEntity.ok()
-            .headers(headers)
-            .contentLength(resource.contentLength())
-            .contentType(mediaType)
-            .body(resource);
+                .headers(headers)
+                .contentLength(resource.contentLength())
+                .contentType(mediaType)
+                .body(resource);
     }
 
 }
