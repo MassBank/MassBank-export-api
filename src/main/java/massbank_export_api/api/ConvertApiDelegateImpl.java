@@ -1,8 +1,14 @@
 package massbank_export_api.api;
 
+import massbank_export_api.api.db.DbRecord;
+import massbank_export_api.api.db.RecordServiceImplementation;
 import massbank_export_api.model.Conversion;
+import massbank.Record;
+import massbank.RecordParser;
 import massbank.export.RecordToNIST_MSP;
 import massbank.export.RecordToRIKEN_MSP;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -10,20 +16,29 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.petitparser.context.Result;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static massbank_export_api.api.DataReader.*;
-
 @Primary
 @Service
 public class ConvertApiDelegateImpl implements ConvertApiDelegate {
+
+    private final RecordServiceImplementation recordServiceImplementation;
+
+    @Autowired
+    public ConvertApiDelegateImpl(RecordServiceImplementation recordServiceImplementation) {
+        this.recordServiceImplementation = recordServiceImplementation;
+    }
+
     /**
      * POST /convert : Create a conversion task.
      *
@@ -38,14 +53,25 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
         final String filename;
         final MediaType mediaType;
 
+        final RecordParser recordparser = new RecordParser(new HashSet<>());
+
+        if (conversion.getRecordList() == null || conversion.getRecordList().isEmpty()) {
+            conversion.setRecordList(recordServiceImplementation.getAllAccessions());
+        }
+
         switch (formatValue) {
             case "nist_msp":
                 mediaType = MediaType.TEXT_PLAIN;
                 filename = "records.msp";
                 resource = new ByteArrayResource(
-                        conversion.getRecordList().stream()
-                                .map(recordMap::get)
+                        conversion.getRecordList().parallelStream()
+                                .map(recordServiceImplementation::findByAccession)
                                 .filter(Objects::nonNull)
+                                .map(DbRecord::getContent)
+                                .map(recordparser::parse)
+                                .filter(Result::isSuccess)
+                                .map(Result::get)
+                                .map(record -> (massbank.Record) record)
                                 .map(RecordToNIST_MSP::convert)
                                 .collect(Collectors.joining())
                                 .getBytes(StandardCharsets.UTF_8));
@@ -54,9 +80,14 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 mediaType = MediaType.TEXT_PLAIN;
                 filename = "records.msp";
                 resource = new ByteArrayResource(
-                        conversion.getRecordList().stream()
-                                .map(recordMap::get)
+                        conversion.getRecordList().parallelStream()
+                                .map(recordServiceImplementation::findByAccession)
                                 .filter(Objects::nonNull)
+                                .map(DbRecord::getContent)
+                                .map(recordparser::parse)
+                                .filter(Result::isSuccess)
+                                .map(Result::get)
+                                .map(record -> (massbank.Record) record)
                                 .map(RecordToRIKEN_MSP::convert)
                                 .collect(Collectors.joining())
                                 .getBytes(StandardCharsets.UTF_8));
@@ -66,19 +97,25 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 filename = "records.zip";
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
-                    conversion.getRecordList().stream()
-                            .map(recordMap::get)
+                    final List<Record> records = conversion.getRecordList().parallelStream()
+                            .map(recordServiceImplementation::findByAccession)
                             .filter(Objects::nonNull)
-                            .forEach(record -> {
-                                try {
-                                    ZipEntry entry = new ZipEntry(record.ACCESSION() + ".txt");
-                                    zos.putNextEntry(entry);
-                                    zos.write(record.toString().getBytes(StandardCharsets.UTF_8));
-                                    zos.closeEntry();
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            });
+                            .map(DbRecord::getContent)
+                            .map(recordparser::parse)
+                            .filter(Result::isSuccess)
+                            .map(Result::get)
+                            .map(record -> (massbank.Record) record).toList();
+
+                    records.forEach(record -> {
+                        try {
+                            ZipEntry entry = new ZipEntry(record.ACCESSION() + ".txt");
+                            zos.putNextEntry(entry);
+                            zos.write(record.toString().getBytes(StandardCharsets.UTF_8));
+                            zos.closeEntry();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
                     zos.finish();
                     resource = new ByteArrayResource(baos.toByteArray());
                 } catch (IOException e) {

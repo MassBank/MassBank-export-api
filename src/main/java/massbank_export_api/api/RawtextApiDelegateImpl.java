@@ -1,13 +1,23 @@
 package massbank_export_api.api;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import static massbank_export_api.api.DataReader.recordMap;
+import massbank_export_api.api.db.DbRecord;
+import massbank_export_api.api.db.RecordServiceImplementation;
 
 @Service
 public class RawtextApiDelegateImpl implements RawtextApiDelegate {
+
+    private final RecordServiceImplementation recordServiceImplementation;
+
+    @Autowired
+    public RawtextApiDelegateImpl(RecordServiceImplementation recordServiceImplementation) {
+        this.recordServiceImplementation = recordServiceImplementation;
+    }
+
     /**
      * GET /rawtext/{accession} : Get rawtext for a given accession.
      *
@@ -17,14 +27,14 @@ public class RawtextApiDelegateImpl implements RawtextApiDelegate {
      */
     @Override
     public ResponseEntity<String> rawtextAccessionGet(String accession) {
-        var record = recordMap.get(accession);
+        final DbRecord record = recordServiceImplementation.findByAccession(accession);
         if (record == null) {
             return ResponseEntity.notFound().build();
         }
 
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_PLAIN)
-                .body(record.toString());
+                .body(record.getContent());
     }
 
 }
