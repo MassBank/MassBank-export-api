@@ -3,25 +3,51 @@ name: Test with Maven
 on:
   push:
     branches:
-      - '**'
+      - "**"
   pull_request:
     branches:
-      - '**'
+      - "**"
 
 jobs:
   execute_maven:
-
     runs-on: ubuntu-latest
+
+    container:
+      image: postgres:18-alpine
+
+    services:
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the username and password for postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 2
 
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: maven
-
-      - name: Build and test with Maven
-        run: mvn -B package
+      - name: Connect to PostgreSQL
+        run: |
+          (addgroup -S postgres && adduser -S postgres -G postgres || true) && \
+          rm -rf /var/lib/postgresql/data && \
+          mkdir -p /var/lib/postgresql/data && \
+          chmod -R 777 /var/lib/postgresql/data && \
+          chown -R postgres:postgres /var/lib/postgresql/data && \
+          su - postgres -c "initdb /var/lib/postgresql/data" && \
+          su - postgres -c "pg_ctl start -D /var/lib/postgresql/data -l /var/lib/postgresql/log.log" && \
+          cat initDB.sh | su - postgres -c "sh" && \
+          apk add openjdk21 && \
+          apk add maven && \
+          mvn -B package
+        env:
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          MB_DATA_DIRECTORY: "src/test/resources/MassBank-data-test"
+          DB_URL: "jdbc:postgresql://localhost:5432/records"
