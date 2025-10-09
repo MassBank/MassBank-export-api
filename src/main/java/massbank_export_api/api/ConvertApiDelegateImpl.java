@@ -20,10 +20,17 @@ import org.petitparser.context.Result;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -95,31 +102,30 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
             case "massbank":
                 mediaType = MediaType.parseMediaType("application/zip");
                 filename = "records.zip";
-                try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
-                    final List<Record> records = conversion.getRecordList().parallelStream()
+                try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        final ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+                    conversion.getRecordList().parallelStream()
                             .map(recordServiceImplementation::findByAccession)
                             .filter(Objects::nonNull)
                             .map(DbRecord::getContent)
-                            .map(recordparser::parse)
-                            .filter(Result::isSuccess)
-                            .map(Result::get)
-                            .map(record -> (massbank.Record) record).toList();
-
-                    records.forEach(record -> {
-                        try {
-                            ZipEntry entry = new ZipEntry(record.ACCESSION() + ".txt");
-                            zos.putNextEntry(entry);
-                            zos.write(record.toString().getBytes(StandardCharsets.UTF_8));
-                            zos.closeEntry();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                            .forEach(record -> {
+                                final String accession = record.substring(record.indexOf("ACCESSION:") + 10,
+                                        record.indexOf("\n", record.indexOf("ACCESSION:"))).trim();
+                                try {
+                                    final ZipEntry entry = new ZipEntry(accession + ".txt");
+                                    synchronized (zos) { // Synchronize access to ZipOutputStream
+                                        zos.putNextEntry(entry);
+                                        zos.write(record.toString().getBytes(StandardCharsets.UTF_8));
+                                        zos.closeEntry();
+                                    }
+                                } catch (IOException e) {
+                                    throw new RuntimeException("Error adding record to zip: " + accession, e);
+                                }
+                            });
                     zos.finish();
                     resource = new ByteArrayResource(baos.toByteArray());
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("Error creating zip file", e);
                 }
                 break;
             default:
@@ -129,7 +135,6 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                         .contentType(MediaType.TEXT_PLAIN)
                         .body(resource);
         }
-        ;
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename);
