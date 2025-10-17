@@ -33,7 +33,7 @@ public class DataReader {
 
     private static final Logger logger = LogManager.getLogger(DataReader.class);
 
-    @Value("${MB_DATA_DIRECTORY}")
+    @Value("${DATA_DIRECTORY}")
     public String dataDirectory;
 
     private final RecordServiceImplementation recordServiceImplementation;
@@ -47,9 +47,6 @@ public class DataReader {
     public void readDataAfterStartup() {
         logger.info("Application started with data directory: {}", dataDirectory);
 
-        recordServiceImplementation.deleteAll();
-        logger.info("Cleared existing records in the database.");
-
         final Path dataDirectoryPath = Paths.get(dataDirectory);
         final PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + dataDirectoryPath + "/*/*.txt");
         final AtomicInteger progressCounter = new AtomicInteger(0);
@@ -57,8 +54,7 @@ public class DataReader {
 
         try {
             recordServiceImplementation.deleteAll();
-            final long initialCount = recordServiceImplementation.count();
-            logger.info("Database connectivity test successful. Initial record count: {}", initialCount);
+            logger.info("Database connectivity test successful. Cleared existing records in the database.");
         } catch (Exception e) {
             logger.error("Database connectivity test failed", e);
             logger.error(
