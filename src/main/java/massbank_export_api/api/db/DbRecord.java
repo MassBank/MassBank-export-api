@@ -23,10 +23,10 @@ public class DbRecord {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", columnDefinition = "SERIAL", nullable = false, unique = true)
+    @Column(name = "id", nullable = false, unique = true)
     private Long id;
 
-    @Column(name = "accession", columnDefinition = "VARCHAR(50)", nullable = false, unique = true)
+    @Column(name = "accession", columnDefinition = "VARCHAR(120)", nullable = false, unique = true)
     private String accession;
 
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)

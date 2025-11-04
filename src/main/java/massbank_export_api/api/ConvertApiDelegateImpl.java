@@ -1,12 +1,12 @@
 package massbank_export_api.api;
 
-import massbank_export_api.api.db.DbRecord;
-import massbank_export_api.api.db.RecordServiceImplementation;
-import massbank_export_api.model.Conversion;
 import massbank.RecordParser;
 import massbank.export.RecordToNIST_MSP;
 import massbank.export.RecordToRIKEN_MSP;
-
+import massbank_export_api.api.db.DbRecord;
+import massbank_export_api.api.db.RecordServiceImplementation;
+import massbank_export_api.model.Conversion;
+import org.petitparser.context.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ByteArrayResource;
@@ -15,7 +15,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.petitparser.context.Result;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -71,7 +70,7 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                                 .map(Result::get)
                                 .map(record -> (massbank.Record) record)
                                 .map(RecordToNIST_MSP::convert)
-                                .collect(Collectors.joining())
+                                .collect(Collectors.joining(System.lineSeparator(), "", System.lineSeparator()))
                                 .getBytes(StandardCharsets.UTF_8));
                 break;
             case "riken_msp":
@@ -87,7 +86,7 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                                 .map(Result::get)
                                 .map(record -> (massbank.Record) record)
                                 .map(RecordToRIKEN_MSP::convert)
-                                .collect(Collectors.joining())
+                                .collect(Collectors.joining(System.lineSeparator(), "", System.lineSeparator()))
                                 .getBytes(StandardCharsets.UTF_8));
                 break;
             case "massbank":
