@@ -11,7 +11,7 @@ Spring Boot. It uses the RecordParserDefinition from the original
 - Java 21
 - Spring Boot 3.5
 - maven
-- PostgreSQL (tested on version 14 and 18)
+- PostgreSQL (tested on version 17)
 
 ## Configuration
 

@@ -10,6 +10,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(classes = org.openapitools.OpenApiGeneratorApplication.class)
 @AutoConfigureMockMvc
+@Testcontainers
 public class ExportApiControllerTest {
 
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
