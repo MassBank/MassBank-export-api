@@ -49,7 +49,7 @@ RequestHeader set X-Forwarded-Port 443
 
 To make this work with a K8s nginx Ingress one needs to enable the property
 
-```bash
+```
 use-forwarded-headers true
 ```
 
@@ -59,39 +59,40 @@ If not set / is used by default.
 
 ### PostgreSQL
 
-Make sure to have a [PostgreSQL](https://www.postgresql.org) server installed and running on your system. The MassBank data will be stored there.
+Make sure to have a [PostgreSQL](https://www.postgresql.org) server installed and running on your system. The MassBank 
+data will be stored there.
 
-By default, the export service expects the PostgreSQL service running at _localhost_ with port 5432 and the database _postgres_. Default user is _postgres_ and password is _postgres_.
+By default, the export service expects the PostgreSQL service running at _localhost_ with port 5432 and the database 
+_records_. Default user is _massbank_export_api_user_ and password is _massbank-export-api-password_.
+
 
 ## Build and Run
 
-Run the _run-cmd.sh_ script to let build the JAR file in _target_ directory and to start the export api service with all pre-configured variables.
-
-```bash
-sh run-cmd.sh
-```
+Build the service with Maven:
+```mvn package```
+Run the service:
+```java -jar target/massbank-export-api-*.jar```
 
 ## Run with Docker
 
 ### Build and Run
 
-Start the _run-docker.sh_ script to let build and run the server in a Docker container with default settings.
+The file `docker-compose.yml` provides the config to build and run the postgres database and the MassBank-export-api
+with docker. First build the package with `mvn package` as described above. Then copy `env.dist` file to `.env` file
+and configure to your needs. Then build and run with:
 
 ```bash
-sh run-docker.sh
+docker compose up --build
 ```
 
 ### Use Pre-built Container
 
 Pre-built Docker images are available from
 [quay.io/massbank/massbank-export-api](https://quay.io/repository/massbank/massbank-export-api).
-The fastest way to get things running is:
+The fastest way to get things running after creating `.env` is:
 
 ```bash
-# Start up a container in detached mode
-docker run -d -p 8080:8080 \
--v $MB_DATA_DIRECTORY:/MassBank-data \
-quay.io/massbank/massbank-export-api:latest
+docker compose up
 ```
 
 ## Usage

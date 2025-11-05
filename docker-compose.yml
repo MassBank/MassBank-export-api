@@ -24,9 +24,11 @@ services:
       start_period: 40s
 
   export-service:
+    image: quay.io/massbank/massbank-export-api:latest
     build:
       context: ..
       dockerfile: Dockerfile
+    pull_policy: always
     restart: always
     ports:
       - "8080:8080"
