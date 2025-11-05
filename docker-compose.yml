@@ -26,7 +26,7 @@ services:
   export-service:
     image: quay.io/massbank/massbank-export-api:latest
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
     pull_policy: always
     restart: always
