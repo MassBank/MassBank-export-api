@@ -13,10 +13,6 @@ import lombok.ToString;
 @Setter
 @ToString
 @Entity
-@Table(name = "record",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_record_accession", columnNames = { "accession" })
-    })
 public class DbRecord {
 
     @Id
@@ -24,7 +20,7 @@ public class DbRecord {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "accession", columnDefinition = "VARCHAR(120)", nullable = false)
+    @Column(name = "accession", columnDefinition = "VARCHAR(120)", nullable = false, unique = true)
     private String accession;
 
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)

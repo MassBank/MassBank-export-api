@@ -35,9 +35,9 @@ services:
     depends_on:
       - postgres
     environment:
-      MB_DATA_DIRECTORY: "/MassBank-data"
+      MB_DATA_DIRECTORY: ${MB_DATA_DIRECTORY}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-*}
-      DB_HOST: ${DB_HOST}
+      DB_HOST: postgres
       DB_PORT: ${DB_PORT}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
