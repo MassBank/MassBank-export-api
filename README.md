@@ -24,7 +24,7 @@ release. This directory needs to be configured in the environment variable
 
 ```bash
 git clone https://github.com/MassBank/MassBank-data.git
-export MB_DATA_DIRECTORY="./MassBank-data"
+export MB_DATA_DIRECTORY="$(realpath ./MassBank-data)"
 ```
 
 ### CORS
@@ -34,6 +34,14 @@ To configure CORS you can set the environment variable `CORS_ALLOWED_ORIGINS`.
 ```bash
 export CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
+
+### CONTEXT_PATH
+
+The application serves the content at the given CONTEXT_PATH. If no CONTEXT_PATH
+is given the application serves at root path http://localhost:8080/. To serve the
+application at a different path set the environment variable CONTEXT_PATH,
+e.g. `CONTEXT_PATH="/MassBank-export` and the server will listen on 
+http://localhost:8080/MassBank-export.
 
 ### Using a Reverse Proxy
 
