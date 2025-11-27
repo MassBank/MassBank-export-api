@@ -103,6 +103,30 @@ paths:
         "404":
           description: Accession not found
 
+  /validate:
+    post:
+      summary: Validate a single MassBank record.
+      requestBody:
+        required: true
+        content:
+          text/plain; charset=utf-8:
+            schema:
+              type: string
+              example: |
+                ACCESSION: MSBNK-IPB_Halle-PB001341
+                RECORD_TITLE: ...
+      responses:
+        "200":
+          description: Record is valid.
+        "400":
+          description: Invalid request body (e.g. empty or not text).
+        "422":
+          description: Validation failed with details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validation_error"
+
 components:
   schemas:
     record_list:
@@ -134,3 +158,17 @@ components:
           $ref: "#/components/schemas/record_list"
         format:
           $ref: "#/components/schemas/format"
+
+    validation_error:
+      description: Detailed validation errors for an invalid record.
+      type: object
+      properties:
+        message:
+          type: string
+          example: Error message.
+        line:
+          type: integer
+          example: 12
+        column:
+          type: integer
+          example: 5
