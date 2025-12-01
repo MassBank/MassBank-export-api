@@ -501,10 +501,13 @@ PK$PEAK: m/z int. rel.int.
             .content(validRecord))
             .andExpect(status().isOk());
 
+        String expectedResponse = "{ \"message\": \"letter or digit expected\", \"line\":1, \"column\":11 }";
         mockMvc.perform(post("/validate")
                 .contentType("text/plain")
                 .content(invalidRecord))
-            .andExpect(status().isUnprocessableEntity());
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(content().contentType("application/json"))
+            .andExpect(content().json(expectedResponse));
     }
 
 }
