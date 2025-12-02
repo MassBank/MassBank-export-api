@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
-import java.util.Map;
 
 @Primary
 @Service
@@ -23,44 +22,50 @@ public class ValidateApiDelegateImpl implements ValidateApiDelegate {
     }
 
     @Override
-    public ResponseEntity<Void> validatePost(String body) {
+    public ResponseEntity<Void> validatePost(final String body) {
         if (body == null || body.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
-        Result result = recordParser.parse(body);
+        ResponseEntity<ValidationError> respWithBody;
+        final ValidationError error = new ValidationError();
+        final Result result = recordParser.parse(body);
         if (result.isSuccess()) {
-            return ResponseEntity.ok().build();
-        }
+            error.setMessage("Record is valid.");
+            error.setLine(null);
+            error.setColumn(null);
 
-        String message = result.getMessage();
-        int pos = result.getPosition();
+            respWithBody = ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(error);
+        } else {
 
-        String[] tokens = body.split("\\n");
-        int offset = 0;
-        int lineNumber = 1;
-        int col = 0;
-        for (String token : tokens) {
-            offset += token.length() + 1;
-            if (pos < offset) {
-                col = pos - (offset - (token.length() + 1));
-                break;
+            final String message = result.getMessage();
+            final int pos = result.getPosition();
+
+            final String[] tokens = body.split("\\n");
+            int offset = 0;
+            int lineNumber = 1;
+            int col = 0;
+            for (String token : tokens) {
+                offset += token.length() + 1;
+                if (pos < offset) {
+                    col = pos - (offset - (token.length() + 1));
+                    break;
+                }
+                lineNumber++;
             }
-            lineNumber++;
+
+            error.setMessage(message);
+            error.setLine(lineNumber);
+            error.setColumn(col);
+
+            respWithBody = ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(error);
         }
-
-        ValidationError error = new ValidationError();
-        error.setMessage(message);
-        error.setLine(lineNumber);
-        error.setColumn(col);
-
-        ResponseEntity<ValidationError> respWithBody =
-                ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(error);
 
         @SuppressWarnings("unchecked")
-        ResponseEntity<Void> casted = (ResponseEntity<Void>)(ResponseEntity<?>) respWithBody;
+        final ResponseEntity<Void> casted = (ResponseEntity<Void>) (ResponseEntity<?>) respWithBody;
+
         return casted;
     }
 
