@@ -1,8 +1,7 @@
 openapi: 3.0.3
 info:
   title: Export MassBank content in different formats
-  description:
-    This microservice converts MassBank records into a number of different other formats.
+  description: This microservice converts MassBank records into a number of different other formats.
   version: "0.1"
 servers:
   - url: http://localhost:8080
@@ -109,12 +108,9 @@ paths:
       requestBody:
         required: true
         content:
-          text/plain; charset=utf-8:
+          application/json:
             schema:
-              type: string
-              example: |
-                ACCESSION: MSBNK-IPB_Halle-PB001341
-                RECORD_TITLE: ...
+              $ref: "#/components/schemas/validation"
       responses:
         "200":
           description: Record is valid.
@@ -158,6 +154,16 @@ components:
           $ref: "#/components/schemas/record_list"
         format:
           $ref: "#/components/schemas/format"
+
+    validation:
+      description: a single record as plain text
+      type: object
+      properties:
+        text:
+          type: string
+          example: |
+            ACCESSION: MSBNK-IPB_Halle-PB001341
+            RECORD_TITLE: ...
 
     validation_error:
       description: Detailed validation errors for an invalid record.

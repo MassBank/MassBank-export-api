@@ -1,6 +1,7 @@
 package massbank_export_api.api;
 
 import massbank.RecordParser;
+import massbank_export_api.model.Validation;
 import massbank_export_api.model.ValidationError;
 import org.petitparser.context.Result;
 import org.springframework.context.annotation.Primary;
@@ -22,14 +23,16 @@ public class ValidateApiDelegateImpl implements ValidateApiDelegate {
     }
 
     @Override
-    public ResponseEntity<Void> validatePost(final String body) {
-        if (body == null || body.trim().isEmpty()) {
+    public ResponseEntity<Void> validatePost(Validation validation) {
+        if (validation == null || validation.getText() == null) {
             return ResponseEntity.badRequest().build();
         }
 
+        final String recordText = validation.getText();
+
         ResponseEntity<ValidationError> respWithBody;
         final ValidationError error = new ValidationError();
-        final Result result = recordParser.parse(body);
+        final Result result = recordParser.parse(recordText);
         if (result.isSuccess()) {
             error.setMessage("Record is valid.");
             error.setLine(null);
@@ -41,7 +44,7 @@ public class ValidateApiDelegateImpl implements ValidateApiDelegate {
             final String message = result.getMessage();
             final int pos = result.getPosition();
 
-            final String[] tokens = body.split("\\n");
+            final String[] tokens = recordText.split("\\n");
             int offset = 0;
             int lineNumber = 1;
             int col = 0;
