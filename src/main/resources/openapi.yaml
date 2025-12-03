@@ -114,14 +114,22 @@ paths:
       responses:
         "200":
           description: Record is valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validation_result"
         "400":
           description: Invalid request body (e.g. empty or not text).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validation_result"
         "422":
           description: Validation failed with details.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/validation_error"
+                $ref: "#/components/schemas/validation_result"
 
 components:
   schemas:
@@ -165,7 +173,7 @@ components:
             ACCESSION: MSBNK-IPB_Halle-PB001341
             RECORD_TITLE: ...
 
-    validation_error:
+    validation_result:
       description: Detailed validation errors for an invalid record.
       type: object
       properties:
