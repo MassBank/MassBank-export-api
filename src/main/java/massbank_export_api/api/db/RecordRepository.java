@@ -11,7 +11,7 @@ public interface RecordRepository extends JpaRepository<DbRecord, Long> {
 
     DbRecord findByAccession(String accession);
 
-    // Custom query to fetch all accessions
-    @Query(value = "SELECT accession FROM record", nativeQuery = true)
+    @Query("SELECT r.accession FROM DbRecord r")
     List<String> findAllAccessions();
+
 }

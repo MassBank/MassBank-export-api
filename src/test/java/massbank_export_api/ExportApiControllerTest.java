@@ -148,6 +148,15 @@ public class ExportApiControllerTest {
     }
 
     @Test
+    public void testCreateConversionTaskNistMSPEmptyRecordList() throws Exception {
+        String requestBody = "{ \"record_list\": [ ], \"format\": \"nist_msp\" }";
+        mockMvc.perform(post("/convert")
+                        .contentType("application/json")
+                        .content(requestBody))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     public void testCreateConversionTaskRikenMSP() throws Exception {
         String requestBody = "{ \"record_list\": [\"MSBNK-IPB_Halle-PB001341\" , \"MSBNK-IPB_Halle-PB000125\"], \"format\": \"riken_msp\" }";
         String expectedResponse = """
