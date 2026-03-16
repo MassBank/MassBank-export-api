@@ -1,5 +1,6 @@
 package massbank_export_api.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import massbank.RecordParser;
 import massbank.export.RecordToNIST_MSP;
 import massbank.export.RecordToRIKEN_MSP;
@@ -10,6 +11,7 @@ import org.petitparser.context.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,6 +20,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Objects;
@@ -46,9 +50,9 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
     @Override
     public ResponseEntity<Resource> convertPost(Conversion conversion) {
         String formatValue = conversion.getFormat() != null ? conversion.getFormat().getValue() : "";
-        final ByteArrayResource resource;
-        final String filename;
-        final MediaType mediaType;
+        Resource resource = null;
+        String filename = null;
+        MediaType mediaType = null;
 
         final RecordParser recordparser = new RecordParser(new HashSet<>());
 
@@ -103,9 +107,9 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                                         record.indexOf("\n", record.indexOf("ACCESSION:"))).trim();
                                 try {
                                     final ZipEntry entry = new ZipEntry(accession + ".txt");
-                                    synchronized (zos) { // Synchronize access to ZipOutputStream
+                                    synchronized (zos) {
                                         zos.putNextEntry(entry);
-                                        zos.write(record.toString().getBytes(StandardCharsets.UTF_8));
+                                        zos.write(record.getBytes(StandardCharsets.UTF_8));
                                         zos.closeEntry();
                                     }
                                 } catch (IOException e) {
@@ -118,6 +122,40 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                     throw new RuntimeException("Error creating zip file", e);
                 }
                 break;
+            case "json":
+                mediaType = MediaType.parseMediaType("application/jsonl");
+                try {
+                    PipedOutputStream pos = new PipedOutputStream();
+                    PipedInputStream pis = new PipedInputStream(pos);
+                    new Thread(() -> {
+                        try {
+                            ObjectMapper mapper = new ObjectMapper();
+                            boolean first = true;
+                            for (String accession : conversion.getRecordList()) {
+                                DbRecord dbRecord = recordServiceImplementation.findByAccession(accession);
+                                if (dbRecord == null) continue;
+                                Result parseResult = recordparser.parse(dbRecord.getContent());
+                                if (!parseResult.isSuccess()) continue;
+                                massbank.Record record = (massbank.Record) parseResult.get();
+                                String json = mapper.writeValueAsString(massbank.export.RecordToJson.convert(record));
+                                if (!first) {
+                                    pos.write('\n');
+                                } else {
+                                    first = false;
+                                }
+                                pos.write(json.getBytes(StandardCharsets.UTF_8));
+                            }
+                            pos.close();
+                        } catch (IOException e) {
+                            throw new RuntimeException("Error streaming JSONL", e);
+                        }
+                    }).start();
+                    resource = new InputStreamResource(pis);
+                } catch (IOException e) {
+                    throw new RuntimeException("Error creating stream for JSONL", e);
+                }
+                filename = null;
+                break;
             default:
                 String message = "Missing or unsupported format value.";
                 resource = new ByteArrayResource(message.getBytes(StandardCharsets.UTF_8));
@@ -126,14 +164,24 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                         .body(resource);
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename);
-
-        return ResponseEntity.ok()
-                .headers(headers)
-                .contentLength(resource.contentLength())
-                .contentType(mediaType)
-                .body(resource);
+        if ("json".equals(formatValue)) {
+            // Kein Download, sondern Stream
+            return ResponseEntity.ok()
+                    .contentType(mediaType)
+                    .body(resource);
+        } else {
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename);
+            long contentLength = -1;
+            try {
+                contentLength = resource.contentLength();
+            } catch (IOException ignored) {}
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(contentLength)
+                    .contentType(mediaType)
+                    .body(resource);
+        }
     }
 
 }

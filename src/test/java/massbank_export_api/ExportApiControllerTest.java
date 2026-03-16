@@ -525,4 +525,25 @@ public class ExportApiControllerTest {
                 .andExpect(content().json(expectedResponse));
     }
 
+    @Test
+    public void testCreateConversionTaskJsonL() throws Exception {
+        String requestBody = "{ \"record_list\": [\"MSBNK-IPB_Halle-PB001341\", \"MSBNK-IPB_Halle-PB000125\"], \"format\": \"json\" }";
+
+        var mvcResult = mockMvc.perform(post("/convert")
+                .contentType("application/json")
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/jsonl"))
+                .andReturn();
+
+        String response = mvcResult.getResponse().getContentAsString();
+        String[] lines = response.split("\\n");
+        assertEquals(2, lines.length, "Es sollten zwei JSON-Objekte im Stream sein");
+        for (String line : lines) {
+            assertDoesNotThrow(() -> {
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(line);
+            }, "Zeile ist kein valides JSON: " + line);
+        }
+    }
+
 }
