@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.2
 info:
   title: Export MassBank content in different formats
   description: This microservice converts MassBank records into a number of different other formats.
@@ -50,6 +50,13 @@ paths:
                 massbank:
                   summary: MassBank zip file
                   description: zip file with seperate MassBank files
+            application/jsonl:
+              schema:
+                type: string
+              examples:
+                json:
+                  summary: JSON
+                  description: JSON export
 
   /metadata/{accession}:
     get:
@@ -152,6 +159,7 @@ components:
         - nist_msp
         - riken_msp
         - massbank
+        - json
       example: nist_msp
 
     conversion:
