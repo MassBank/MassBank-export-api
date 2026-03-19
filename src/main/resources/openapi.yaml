@@ -1,4 +1,4 @@
-openapi: 3.1.2
+openapi: 3.0.4
 info:
   title: Export MassBank content in different formats
   description: This microservice converts MassBank records into a number of different other formats.
@@ -50,7 +50,7 @@ paths:
                 massbank:
                   summary: MassBank zip file
                   description: zip file with seperate MassBank files
-            application/jsonl:
+            application/json:
               schema:
                 type: string
               examples:
