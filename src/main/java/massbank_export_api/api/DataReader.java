@@ -11,7 +11,6 @@ import org.petitparser.context.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -27,7 +26,6 @@ import java.util.stream.Stream;
 
 @Component
 @EnableJpaRepositories(basePackages = "massbank_export_api.api.db")
-@EntityScan(basePackages = "massbank_export_api.api.db")
 @EnableAutoConfiguration
 public class DataReader {
 
