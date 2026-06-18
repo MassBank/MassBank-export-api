@@ -6,16 +6,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import massbank_export_api.api.db.DbRecord;
-import massbank_export_api.api.db.RecordServiceImplementation;
+import massbank_export_api.api.db.RecordService2;
 
 @Service
 public class RawtextApiDelegateImpl implements RawtextApiDelegate {
 
-    private final RecordServiceImplementation recordServiceImplementation;
+    private final RecordService2 recordService;
 
     @Autowired
-    public RawtextApiDelegateImpl(RecordServiceImplementation recordServiceImplementation) {
-        this.recordServiceImplementation = recordServiceImplementation;
+    public RawtextApiDelegateImpl(RecordService2 recordService) {
+        this.recordService = recordService;
     }
 
     /**
@@ -27,7 +27,7 @@ public class RawtextApiDelegateImpl implements RawtextApiDelegate {
      */
     @Override
     public ResponseEntity<String> rawtextAccessionGet(String accession) {
-        final DbRecord record = recordServiceImplementation.findByAccession(accession);
+        final DbRecord record = recordService.findByAccession(accession);
         if (record == null) {
             return ResponseEntity.notFound().build();
         }

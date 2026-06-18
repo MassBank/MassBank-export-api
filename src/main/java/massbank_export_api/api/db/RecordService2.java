@@ -2,7 +2,7 @@ package massbank_export_api.api.db;
 
 import java.util.List;
 
-public interface RecordService {
+public interface RecordService2 {
 
     public List<DbRecord> getAll();
 

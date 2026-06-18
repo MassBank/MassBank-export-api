@@ -12,7 +12,7 @@ import com.google.gson.reflect.TypeToken;
 
 import massbank.RecordParser;
 import massbank_export_api.api.db.DbRecord;
-import massbank_export_api.api.db.RecordServiceImplementation;
+import massbank_export_api.api.db.RecordServiceImplementation2;
 
 import java.lang.reflect.Type;
 import java.util.HashSet;
@@ -21,10 +21,10 @@ import java.util.List;
 @Service
 public class MetadataApiDelegateImpl implements MetadataApiDelegate {
 
-    private final RecordServiceImplementation recordServiceImplementation;
+    private final RecordServiceImplementation2 recordServiceImplementation;
 
     @Autowired
-    public MetadataApiDelegateImpl(RecordServiceImplementation recordServiceImplementation) {
+    public MetadataApiDelegateImpl(RecordServiceImplementation2 recordServiceImplementation) {
         this.recordServiceImplementation = recordServiceImplementation;
     }
 

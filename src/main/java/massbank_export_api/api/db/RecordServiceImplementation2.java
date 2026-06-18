@@ -8,12 +8,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
-public class RecordServiceImplementation implements RecordService {
+public class RecordServiceImplementation2 implements RecordService2 {
 
     private final RecordRepository recordRepository;
 
     @Autowired
-    public RecordServiceImplementation(final RecordRepository recordRepository) {
+    public RecordServiceImplementation2(final RecordRepository recordRepository) {
         this.recordRepository = recordRepository;
     }
 

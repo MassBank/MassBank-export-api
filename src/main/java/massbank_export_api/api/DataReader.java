@@ -1,9 +1,10 @@
 package massbank_export_api.api;
 
+import massbank.AbstractRecord;
 import massbank.Record;
 import massbank.RecordParser;
 import massbank_export_api.api.db.DbRecord;
-import massbank_export_api.api.db.RecordServiceImplementation;
+import massbank_export_api.api.db.RecordServiceImplementation2;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,11 +35,11 @@ public class DataReader {
     @Value("${DATA_DIRECTORY}")
     public String dataDirectory;
 
-    private final RecordServiceImplementation recordServiceImplementation;
+    private final RecordServiceImplementation2 recordService;
 
     @Autowired
-    public DataReader(RecordServiceImplementation recordServiceImplementation) {
-        this.recordServiceImplementation = recordServiceImplementation;
+    public DataReader(RecordServiceImplementation2 recordService) {
+        this.recordService = recordService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -51,7 +52,7 @@ public class DataReader {
         final RecordParser recordparser = new RecordParser(new HashSet<>());
 
         try {
-            recordServiceImplementation.deleteAll();
+            recordService.deleteAll();
             logger.info("Database connectivity test successful. Cleared existing records in the database.");
         } catch (Exception e) {
             logger.error("Database connectivity test failed", e);
@@ -73,13 +74,14 @@ public class DataReader {
                         final String content = Files.readString(filename, StandardCharsets.UTF_8);
                         final Result result = recordparser.parse(content);
                         if (result.isSuccess()) {
-                            final Record record = result.get();
-                            if (!record.isDeprecated()) {
-                                final String accession = record.ACCESSION();
+                            final AbstractRecord record = result.get();
+                            if (record instanceof Record typedRecord) {
+
+                                final String accession = typedRecord.getAccession();
 
                                 try {
                                     final DbRecord dbRecord = new DbRecord(null, accession, content);
-                                    final DbRecord savedRecord = recordServiceImplementation.insert(dbRecord);
+                                    final DbRecord savedRecord = recordService.insert(dbRecord);
                                     if (savedRecord != null && savedRecord.getId() != null) {
                                         logger.debug(
                                                 "Successfully inserted record with accession: {} and ID: {}",
@@ -105,7 +107,7 @@ public class DataReader {
 
                 logger.info("Data loading completed in database mode.");
                 try {
-                    final long finalCount = recordServiceImplementation.count();
+                    final long finalCount = recordService.count();
                     logger.info("Final count of records in database: {}", finalCount);
                     if (finalCount == 0) {
                         logger.warn(

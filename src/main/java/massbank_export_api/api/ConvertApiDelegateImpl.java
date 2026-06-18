@@ -7,7 +7,7 @@ import massbank.export.RecordToJson;
 import massbank.export.RecordToNIST_MSP;
 import massbank.export.RecordToRIKEN_MSP;
 import massbank_export_api.api.db.DbRecord;
-import massbank_export_api.api.db.RecordServiceImplementation;
+import massbank_export_api.api.db.RecordServiceImplementation2;
 import massbank_export_api.model.Conversion;
 import org.petitparser.context.Result;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,11 +32,11 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class ConvertApiDelegateImpl implements ConvertApiDelegate {
 
-    private final RecordServiceImplementation recordServiceImplementation;
+    private final RecordServiceImplementation2 recordService;
 
     @Autowired
-    public ConvertApiDelegateImpl(RecordServiceImplementation recordServiceImplementation) {
-        this.recordServiceImplementation = recordServiceImplementation;
+    public ConvertApiDelegateImpl(RecordServiceImplementation2 recordService) {
+        this.recordService = recordService;
     }
 
     /**
@@ -51,7 +51,7 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
         String formatValue = conversion.getFormat() != null ? conversion.getFormat().getValue() : "";
         final RecordParser recordparser = new RecordParser(new HashSet<>());
         if (conversion.getRecordList() == null || conversion.getRecordList().isEmpty()) {
-            conversion.setRecordList(recordServiceImplementation.getAllAccessions());
+            conversion.setRecordList(recordService.getAllAccessions());
         }
 
         Resource resource;
@@ -65,7 +65,7 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 mediaType = MediaType.TEXT_PLAIN;
                 filename = "records.msp";
                 String content = conversion.getRecordList().parallelStream()
-                        .map(recordServiceImplementation::findByAccession)
+                        .map(recordService::findByAccession)
                         .filter(Objects::nonNull)
                         .map(DbRecord::getContent)
                         .map(recordparser::parse)
@@ -83,7 +83,7 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                      ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
                     conversion.getRecordList().parallelStream()
-                            .map(recordServiceImplementation::findByAccession)
+                            .map(recordService::findByAccession)
                             .filter(Objects::nonNull)
                             .map(DbRecord::getContent)
                             .forEach(record -> {
@@ -113,7 +113,7 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
                     ObjectMapper mapper = new ObjectMapper();
                     java.util.List<Record> recordList = conversion.getRecordList().parallelStream()
-                            .map(recordServiceImplementation::findByAccession)
+                            .map(recordService::findByAccession)
                             .filter(Objects::nonNull)
                             .map(DbRecord::getContent)
                             .map(recordparser::parse)

@@ -585,24 +585,48 @@ public class ExportApiControllerTest {
             "CH$EXACT_MASS": 610.15338,
             "CH$SMILES": "C[C@H]1[C@@H]([C@H]([C@H]([C@@H](O1)OC[C@@H]2[C@H]([C@@H]([C@H]([C@@H](O2)OC3\\u003dC(OC4\\u003dCC(\\u003dCC(\\u003dC4C3\\u003dO)O)O)C5\\u003dCC(\\u003dC(C\\u003dC5)O)O)O)O)O)O)O)O",
             "CH$IUPAC": "InChI\\u003d1S/C27H30O16/c1-8-17(32)20(35)22(37)26(40-8)39-7-15-18(33)21(36)23(38)27(42-15)43-25-19(34)16-13(31)5-10(28)6-14(16)41-24(25)9-2-3-11(29)12(30)4-9/h2-6,8,15,17-18,20-23,26-33,35-38H,7H2,1H3/t8-,15+,17-,18+,20+,21-,22+,23+,26+,27-/m0/s1",
-            "CH$LINK": {
-              "INCHIKEY": "IKGXIBQEEMLURG-NVPNHPEKSA-N",
-              "KEGG": "C05625",
-              "PUBCHEM": "CID:5280805",
-              "COMPTOX": "DTXSID3022326",
-              "ChemOnt": "CHEMONTID:0001111; Organic compounds; Phenylpropanoids and polyketides; Flavonoids; Flavonoid glycosides"
-            },
+            "CH$LINK": [
+                   {
+                     "key": "INCHIKEY",
+                     "value": "IKGXIBQEEMLURG-NVPNHPEKSA-N"
+                   },
+                   {
+                     "key": "KEGG",
+                     "value": "C05625"
+                   },
+                   {
+                     "key": "PUBCHEM",
+                     "value": "CID:5280805"
+                   },
+                   {
+                     "key": "COMPTOX",
+                     "value": "DTXSID3022326"
+                   },
+                   {
+                     "key": "ChemOnt",
+                     "value": "CHEMONTID:0001111; Organic compounds; Phenylpropanoids and polyketides; Flavonoids; Flavonoid glycosides"
+                   }
+                 ],
             "AC$INSTRUMENT": "API QSTAR Pulsar i",
             "AC$INSTRUMENT_TYPE": "LC-ESI-QTOF",
             "AC$MASS_SPECTROMETRY_MS_TYPE": "MS2",
             "AC$MASS_SPECTROMETRY_ION_MODE": "POSITIVE",
-            "AC$MASS_SPECTROMETRY": {
-              "COLLISION_ENERGY": "10 eV",
-              "IONIZATION": "ESI"
-            },
-            "MS$FOCUSED_ION": {
-              "PRECURSOR_TYPE": "[M+H]+"
-            },
+            "AC$MASS_SPECTROMETRY": [
+                    {
+                      "key": "COLLISION_ENERGY",
+                      "value": "10 eV"
+                    },
+                    {
+                      "key": "IONIZATION",
+                      "value": "ESI"
+                    }
+                  ],
+            "MS$FOCUSED_ION": [
+                    {
+                      "key": "PRECURSOR_TYPE",
+                      "value": "[M+H]+"
+                    }
+                  ],
             "PK$SPLASH": "splash10-0wmi-0009506000-98ca7f7c8f3072af4481",
             "PK$NUM_PEAK": 5,
             "PK$PEAK": [
@@ -661,24 +685,48 @@ public class ExportApiControllerTest {
             "CH$EXACT_MASS": 272.06847,
             "CH$SMILES": "C1[C@H](OC2\\u003dCC(\\u003dCC(\\u003dC2C1\\u003dO)O)O)C3\\u003dCC\\u003dC(C\\u003dC3)O",
             "CH$IUPAC": "InChI\\u003d1S/C15H12O5/c16-9-3-1-8(2-4-9)13-7-12(19)15-11(18)5-10(17)6-14(15)20-13/h1-6,13,16-18H,7H2/t13-/m0/s1",
-            "CH$LINK": {
-              "INCHIKEY": "FTVWIRXFELQLPI-ZDUSSCGKSA-N",
-              "KEGG": "C00509",
-              "PUBCHEM": "CID:439246",
-              "COMPTOX": "DTXSID1022392",
-              "ChemOnt": "CHEMONTID:0000337; Organic compounds; Phenylpropanoids and polyketides; Flavonoids; Flavans"
-            },
+            "CH$LINK": [
+                    {
+                      "key": "INCHIKEY",
+                      "value": "FTVWIRXFELQLPI-ZDUSSCGKSA-N"
+                    },
+                    {
+                      "key": "KEGG",
+                      "value": "C00509"
+                    },
+                    {
+                      "key": "PUBCHEM",
+                      "value": "CID:439246"
+                    },
+                    {
+                      "key": "COMPTOX",
+                      "value": "DTXSID1022392"
+                    },
+                    {
+                      "key": "ChemOnt",
+                      "value": "CHEMONTID:0000337; Organic compounds; Phenylpropanoids and polyketides; Flavonoids; Flavans"
+                    }
+                  ],
             "AC$INSTRUMENT": "API QSTAR Pulsar i",
             "AC$INSTRUMENT_TYPE": "LC-ESI-QTOF",
             "AC$MASS_SPECTROMETRY_MS_TYPE": "MS2",
             "AC$MASS_SPECTROMETRY_ION_MODE": "POSITIVE",
-            "AC$MASS_SPECTROMETRY": {
-              "COLLISION_ENERGY": "55 eV",
-              "IONIZATION": "ESI"
-            },
-            "MS$FOCUSED_ION": {
-              "PRECURSOR_TYPE": "[M+H]+"
-            },
+            "AC$MASS_SPECTROMETRY": [
+                    {
+                      "key": "COLLISION_ENERGY",
+                      "value": "55 eV"
+                    },
+                    {
+                      "key": "IONIZATION",
+                      "value": "ESI"
+                    }
+                  ],
+            "MS$FOCUSED_ION": [
+                    {
+                      "key": "PRECURSOR_TYPE",
+                      "value": "[M+H]+"
+                    }
+                  ],
             "PK$SPLASH": "splash10-0gbc-9800000000-79055ba218dabe14501d",
             "PK$NUM_PEAK": 29,
             "PK$PEAK": [
