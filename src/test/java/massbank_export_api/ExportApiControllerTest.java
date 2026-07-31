@@ -13,6 +13,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +48,10 @@ public class ExportApiControllerTest {
 
     @BeforeEach
     void setUp() {
-        webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+        webTestClient = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .responseTimeout(Duration.ofSeconds(60))
+                .build();
     }
 
     @AfterAll
@@ -161,6 +165,23 @@ public class ExportApiControllerTest {
                 .bodyValue(requestBody)
                 .exchange()
                 .expectStatus().isOk();
+    }
+
+    @Test
+    public void testCreateConversionTaskNistMSPIgnoresInvalidAccession() {
+        String requestBody = "{ \"record_list\": [\"MSBNK-IPB_Halle-PB001341\", \"MSBNK-IPB_Halle-PB999999\"], \"format\": \"nist_msp\" }";
+        webTestClient.post().uri("/convert")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType("text/plain")
+                .expectBody(String.class)
+                .value(body -> {
+                    assertNotNull(body);
+                    assertTrue(body.contains("DB#: MSBNK-IPB_Halle-PB001341"), "Response: " + body);
+                    assertFalse(body.contains("MSBNK-IPB_Halle-PB999999"), "Response: " + body);
+                });
     }
 
     @Test

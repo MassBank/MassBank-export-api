@@ -3,18 +3,15 @@ package massbank_export_api.api;
 import massbank.AbstractRecord;
 import massbank.Record;
 import massbank.RecordParser;
-import massbank_export_api.api.db.DbRecord;
-import massbank_export_api.api.db.RecordServiceImplementation2;
+import massbank.db.RecordService;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.petitparser.context.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -26,8 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 @Component
-@EnableJpaRepositories(basePackages = "massbank_export_api.api.db")
-@EnableAutoConfiguration
 public class DataReader {
 
     private static final Logger logger = LogManager.getLogger(DataReader.class);
@@ -35,10 +30,10 @@ public class DataReader {
     @Value("${DATA_DIRECTORY}")
     public String dataDirectory;
 
-    private final RecordServiceImplementation2 recordService;
+    private final RecordService recordService;
 
     @Autowired
-    public DataReader(RecordServiceImplementation2 recordService) {
+    public DataReader(RecordService recordService) {
         this.recordService = recordService;
     }
 
@@ -49,15 +44,12 @@ public class DataReader {
         final Path dataDirectoryPath = Paths.get(dataDirectory);
         final PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + dataDirectoryPath + "/*/*.txt");
         final AtomicInteger progressCounter = new AtomicInteger(0);
-        final RecordParser recordparser = new RecordParser(new HashSet<>());
-
         try {
             recordService.deleteAll();
             logger.info("Database connectivity test successful. Cleared existing records in the database.");
         } catch (Exception e) {
             logger.error("Database connectivity test failed", e);
-            logger.error(
-                    "Cannot proceed with database mode. Check your database configuration and connectivity.");
+            logger.error("Check your database configuration and connectivity.");
             return;
         }
 
@@ -68,27 +60,23 @@ public class DataReader {
                 final List<Path> recordFiles = paths.toList();
                 logger.info("Found {} record files in the directory: {}", recordFiles.size(), dataDirectory);
                 final int totalRecords = recordFiles.size();
+                final int progressStep = Math.max(totalRecords / 10, 1);
 
                 recordFiles.parallelStream().forEach(filename -> {
                     try {
                         final String content = Files.readString(filename, StandardCharsets.UTF_8);
+                        final RecordParser recordparser = new RecordParser(new HashSet<>());
                         final Result result = recordparser.parse(content);
                         if (result.isSuccess()) {
                             final AbstractRecord record = result.get();
                             if (record instanceof Record typedRecord) {
-
                                 final String accession = typedRecord.getAccession();
-
                                 try {
-                                    final DbRecord dbRecord = new DbRecord(null, accession, content);
-                                    final DbRecord savedRecord = recordService.insert(dbRecord);
-                                    if (savedRecord != null && savedRecord.getId() != null) {
-                                        logger.debug(
-                                                "Successfully inserted record with accession: {} and ID: {}",
-                                                accession, savedRecord.getId());
+                                    final AbstractRecord savedRecord = recordService.save(typedRecord);
+                                    if (savedRecord != null) {
+                                        logger.debug("Successfully inserted record with accession: {}", accession);
                                     } else {
-                                        logger.error(
-                                                "Failed to insert record with accession: {} - saved record is null or has no ID",
+                                        logger.error("Failed to insert record with accession: {} - saved record is null",
                                                 accession);
                                     }
                                 } catch (Exception e) {
@@ -100,14 +88,14 @@ public class DataReader {
                         logger.error("Error reading file: {}", filename, e);
                     }
                     final int progress = progressCounter.incrementAndGet();
-                    if (progress % (totalRecords / 10) == 0) {
+                    if (progress % progressStep == 0 || progress == totalRecords) {
                         logger.info("Progress: {}/{}", progress, totalRecords);
                     }
                 });
 
                 logger.info("Data loading completed in database mode.");
                 try {
-                    final long finalCount = recordService.count();
+                    final long finalCount = recordService.countActive();
                     logger.info("Final count of records in database: {}", finalCount);
                     if (finalCount == 0) {
                         logger.warn(

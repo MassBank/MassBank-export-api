@@ -1,15 +1,11 @@
 package massbank_export_api.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import massbank.Record;
-import massbank.RecordParser;
+import massbank.db.RecordService;
 import massbank.export.RecordToJson;
 import massbank.export.RecordToNIST_MSP;
 import massbank.export.RecordToRIKEN_MSP;
-import massbank_export_api.api.db.DbRecord;
-import massbank_export_api.api.db.RecordServiceImplementation2;
 import massbank_export_api.model.Conversion;
-import org.petitparser.context.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ByteArrayResource;
@@ -18,12 +14,15 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -32,10 +31,10 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class ConvertApiDelegateImpl implements ConvertApiDelegate {
 
-    private final RecordServiceImplementation2 recordService;
+    private final RecordService recordService;
 
     @Autowired
-    public ConvertApiDelegateImpl(RecordServiceImplementation2 recordService) {
+    public ConvertApiDelegateImpl(RecordService recordService) {
         this.recordService = recordService;
     }
 
@@ -47,11 +46,19 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
      * @see ConvertApi#convertPost
      */
     @Override
+    @Transactional(readOnly = true)
     public ResponseEntity<Resource> convertPost(Conversion conversion) {
         String formatValue = conversion.getFormat() != null ? conversion.getFormat().getValue() : "";
-        final RecordParser recordparser = new RecordParser(new HashSet<>());
+        final List<Record> records;
         if (conversion.getRecordList() == null || conversion.getRecordList().isEmpty()) {
-            conversion.setRecordList(recordService.getAllAccessions());
+            records = recordService.findAllActive();
+        } else {
+            Map<String, Record> activeRecordsByAccession = recordService.findAllActive().stream()
+                    .collect(Collectors.toMap(Record::getAccession, Function.identity(), (first, second) -> first));
+            records = conversion.getRecordList().stream()
+                    .map(activeRecordsByAccession::get)
+                    .filter(Objects::nonNull)
+                    .toList();
         }
 
         Resource resource;
@@ -64,14 +71,7 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 boolean isNist = formatValue.equals("nist_msp");
                 mediaType = MediaType.TEXT_PLAIN;
                 filename = "records.msp";
-                String content = conversion.getRecordList().parallelStream()
-                        .map(recordService::findByAccession)
-                        .filter(Objects::nonNull)
-                        .map(DbRecord::getContent)
-                        .map(recordparser::parse)
-                        .filter(Result::isSuccess)
-                        .map(Result::get)
-                        .map(r -> (massbank.Record) r)
+                String content = records.stream()
                         .map(isNist ? RecordToNIST_MSP::convert : RecordToRIKEN_MSP::convert)
                         .collect(Collectors.joining(System.lineSeparator(), "", System.lineSeparator()));
                 resource = new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8));
@@ -82,18 +82,13 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 filename = "records.zip";
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                      ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
-                    conversion.getRecordList().parallelStream()
-                            .map(recordService::findByAccession)
-                            .filter(Objects::nonNull)
-                            .map(DbRecord::getContent)
-                            .forEach(record -> {
-                                String accession = record.substring(record.indexOf("ACCESSION:") + 10,
-                                        record.indexOf("\n", record.indexOf("ACCESSION:"))).trim();
+                    records.forEach(record -> {
+                                String accession = record.getAccession();
                                 try {
                                     ZipEntry entry = new ZipEntry(accession + ".txt");
                                     synchronized (zos) {
                                         zos.putNextEntry(entry);
-                                        zos.write(record.getBytes(StandardCharsets.UTF_8));
+                                        zos.write(record.toString().getBytes(StandardCharsets.UTF_8));
                                         zos.closeEntry();
                                     }
                                 } catch (IOException e) {
@@ -111,17 +106,7 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 mediaType = MediaType.APPLICATION_JSON;
                 filename = "records.json";
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                    ObjectMapper mapper = new ObjectMapper();
-                    java.util.List<Record> recordList = conversion.getRecordList().parallelStream()
-                            .map(recordService::findByAccession)
-                            .filter(Objects::nonNull)
-                            .map(DbRecord::getContent)
-                            .map(recordparser::parse)
-                            .filter(Result::isSuccess)
-                            .map(Result::get)
-                            .map(r -> (massbank.Record) r)
-                            .toList();
-                    String json = RecordToJson.convertRecords(recordList);
+                    String json = RecordToJson.convertRecords(records);
                     baos.write(json.getBytes(StandardCharsets.UTF_8));
                     resource = new ByteArrayResource(baos.toByteArray());
                 } catch (IOException e) {
@@ -154,5 +139,6 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 .contentType(mediaType)
                 .body(resource);
     }
+
 
 }
