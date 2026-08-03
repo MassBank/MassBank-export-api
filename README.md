@@ -78,8 +78,14 @@ _records_. Default user is _massbank_export_api_user_ and password is _massbank-
 
 Build the service with Maven:
 ```mvn package```
-Run the service:
-```java -jar target/massbank-export-api-*.jar```
+Import the MassBank records into the configured PostgreSQL database once before starting the REST API:
+```bash
+java -Dloader.main=massbank_export_api.DataImportApplication -jar target/massbank-export-api-*.jar
+```
+Run the REST API:
+```bash
+java -jar target/massbank-export-api-*.jar
+```
 
 ## Run with Docker
 
@@ -106,6 +112,18 @@ docker compose up
 ## Usage
 
 For a description of how to use the api browse to the [Swagger UI](http://localhost:8080/swagger-ui/index.html).
+
+The database status can be checked with:
+```bash
+curl http://localhost:8080/database/status
+```
+
+For readiness checks use:
+```bash
+curl -i http://localhost:8080/database/ready
+```
+
+`/database/ready` returns HTTP 200 when the database is reachable and contains active MassBank records, otherwise HTTP 503.
 
 For example, to download all MassBank records in one zip file use the following command:
 

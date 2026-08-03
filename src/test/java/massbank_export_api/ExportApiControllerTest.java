@@ -1,9 +1,12 @@
 package massbank_export_api;
 
+import massbank_export_api.api.DataLoadResult;
+import massbank_export_api.api.DataReader;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -39,6 +42,11 @@ public class ExportApiControllerTest {
     @LocalServerPort
     private int port;
 
+    @Autowired
+    private DataReader dataReader;
+
+    private static boolean dataLoaded = false;
+
     private WebTestClient webTestClient;
 
     @BeforeAll
@@ -52,6 +60,11 @@ public class ExportApiControllerTest {
                 .baseUrl("http://localhost:" + port)
                 .responseTimeout(Duration.ofSeconds(60))
                 .build();
+        if (!dataLoaded) {
+            DataLoadResult result = dataReader.readData();
+            assertTrue(result.successful(), result.message());
+            dataLoaded = true;
+        }
     }
 
     @AfterAll
@@ -67,6 +80,32 @@ public class ExportApiControllerTest {
                 .expectHeader().contentType("application/json")
                 .expectBody(String.class)
                 .value(v -> assertTrue(v != null && v.contains("export api "), "Response: " + v));
+    }
+
+    @Test
+    public void testDatabaseStatus() {
+        webTestClient.get().uri("/database/status")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType("application/json")
+                .expectBody()
+                .jsonPath("$.reachable").isEqualTo(true)
+                .jsonPath("$.ready").isEqualTo(true)
+                .jsonPath("$.activeRecordCount").value(count ->
+                        assertTrue(((Number) count).longValue() > 0, "activeRecordCount must be > 0"));
+    }
+
+    @Test
+    public void testDatabaseReady() {
+        webTestClient.get().uri("/database/ready")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType("application/json")
+                .expectBody()
+                .jsonPath("$.reachable").isEqualTo(true)
+                .jsonPath("$.ready").isEqualTo(true)
+                .jsonPath("$.activeRecordCount").value(count ->
+                        assertTrue(((Number) count).longValue() > 0, "activeRecordCount must be > 0"));
     }
 
     @Test
