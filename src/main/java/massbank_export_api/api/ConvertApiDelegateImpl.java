@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,13 +18,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -49,19 +49,25 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
     @Transactional(readOnly = true)
     public ResponseEntity<Resource> convertPost(Conversion conversion) {
         String formatValue = conversion.getFormat() != null ? conversion.getFormat().getValue() : "";
+
+        if (formatValue.isBlank()) {
+            String message = "Missing or unsupported format value.";
+            return ResponseEntity.badRequest()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(new ByteArrayResource(message.getBytes(StandardCharsets.UTF_8)));
+        }
+
         final List<Record> records;
         if (conversion.getRecordList() == null || conversion.getRecordList().isEmpty()) {
             records = recordService.findAllActive();
         } else {
-            Map<String, Record> activeRecordsByAccession = recordService.findAllActive().stream()
-                    .collect(Collectors.toMap(Record::getAccession, Function.identity(), (first, second) -> first));
             records = conversion.getRecordList().stream()
-                    .map(activeRecordsByAccession::get)
-                    .filter(Objects::nonNull)
+                    .map(recordService::findOptionalByIdAsRecord)
+                    .flatMap(Optional::stream)
                     .toList();
         }
 
-        Resource resource;
+        Resource responseBody;
         String filename;
         MediaType mediaType;
 
@@ -69,75 +75,70 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
             case "nist_msp":
             case "riken_msp": {
                 boolean isNist = formatValue.equals("nist_msp");
+                byte[] bytes;
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))) {
+                    boolean first = true;
+                    for (Record record : records) {
+                        if (!first) {
+                            writer.write(System.lineSeparator());
+                        }
+                        String content = isNist ? RecordToNIST_MSP.convert(record) : RecordToRIKEN_MSP.convert(record);
+                        writer.write(content);
+                        first = false;
+                    }
+                    writer.write(System.lineSeparator());
+                    writer.flush();
+                    bytes = baos.toByteArray();
+                } catch (IOException e) {
+                    throw new RuntimeException("Error creating MSP content", e);
+                }
                 mediaType = MediaType.TEXT_PLAIN;
                 filename = "records.msp";
-                String content = records.stream()
-                        .map(isNist ? RecordToNIST_MSP::convert : RecordToRIKEN_MSP::convert)
-                        .collect(Collectors.joining(System.lineSeparator(), "", System.lineSeparator()));
-                resource = new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8));
+                responseBody = new ByteArrayResource(bytes);
                 break;
             }
             case "massbank": {
-                mediaType = MediaType.parseMediaType("application/zip");
-                filename = "records.zip";
+                byte[] bytes;
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                      ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
-                    records.forEach(record -> {
-                                String accession = record.getAccession();
-                                try {
-                                    ZipEntry entry = new ZipEntry(accession + ".txt");
-                                    synchronized (zos) {
-                                        zos.putNextEntry(entry);
-                                        zos.write(record.toString().getBytes(StandardCharsets.UTF_8));
-                                        zos.closeEntry();
-                                    }
-                                } catch (IOException e) {
-                                    throw new RuntimeException("Error adding record to zip: " + accession, e);
-                                }
-                            });
+                    for (Record record : records) {
+                        ZipEntry entry = new ZipEntry(record.getAccession() + ".txt");
+                        zos.putNextEntry(entry);
+                        zos.write(record.toString().getBytes(StandardCharsets.UTF_8));
+                        zos.closeEntry();
+                    }
                     zos.finish();
-                    resource = new ByteArrayResource(baos.toByteArray());
+                    bytes = baos.toByteArray();
                 } catch (IOException e) {
-                    throw new RuntimeException("Error creating zip file", e);
+                    throw new RuntimeException("Error creating ZIP content", e);
                 }
+                mediaType = MediaType.parseMediaType("application/zip");
+                filename = "records.zip";
+                responseBody = new ByteArrayResource(bytes);
                 break;
             }
             case "json": {
+                String json = RecordToJson.convertRecords(records);
                 mediaType = MediaType.APPLICATION_JSON;
                 filename = "records.json";
-                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                    String json = RecordToJson.convertRecords(records);
-                    baos.write(json.getBytes(StandardCharsets.UTF_8));
-                    resource = new ByteArrayResource(baos.toByteArray());
-                } catch (IOException e) {
-                    throw new RuntimeException("Error creating JSON file", e);
-                }
+                responseBody = new ByteArrayResource(json.getBytes(StandardCharsets.UTF_8));
                 break;
             }
             default: {
                 String message = "Missing or unsupported format value.";
-                resource = new ByteArrayResource(message.getBytes(StandardCharsets.UTF_8));
-                mediaType = MediaType.TEXT_PLAIN;
-                filename = null;
                 return ResponseEntity.badRequest()
-                        .contentType(mediaType)
-                        .body(resource);
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .body(new ByteArrayResource(message.getBytes(StandardCharsets.UTF_8)));
             }
         }
 
         HttpHeaders headers = new HttpHeaders();
-        if (filename != null) {
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename);
-        }
-        long contentLength = -1;
-        try {
-            contentLength = resource.contentLength();
-        } catch (IOException ignored) {}
+        headers.setContentDisposition(ContentDisposition.attachment().filename(filename).build());
         return ResponseEntity.ok()
                 .headers(headers)
-                .contentLength(contentLength)
                 .contentType(mediaType)
-                .body(resource);
+                .body(responseBody);
     }
 
 

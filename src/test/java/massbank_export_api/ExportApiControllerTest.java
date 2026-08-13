@@ -1,19 +1,21 @@
 package massbank_export_api;
 
+import massbank.db.RecordService;
 import massbank_export_api.api.DataLoadResult;
-import massbank_export_api.api.DataReader;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import massbank_export_api.importer.DataReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import massbank_export_api.importer.ImporterConfiguration;
 
 import java.io.InputStream;
 import java.time.Duration;
@@ -25,11 +27,13 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = org.openapitools.OpenApiGeneratorApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(ImporterConfiguration.class)
 @Testcontainers
 public class ExportApiControllerTest {
 
+    @Container
     static final PostgreSQLContainer postgres = new PostgreSQLContainer(
-            "postgres:17-alpine");
+            "postgres:17");
 
     @DynamicPropertySource
     static void registerDatasourceProperties(DynamicPropertyRegistry registry) {
@@ -45,14 +49,10 @@ public class ExportApiControllerTest {
     @Autowired
     private DataReader dataReader;
 
-    private static boolean dataLoaded = false;
+    @Autowired
+    private RecordService recordService;
 
     private WebTestClient webTestClient;
-
-    @BeforeAll
-    static void beforeAll() {
-        postgres.start();
-    }
 
     @BeforeEach
     void setUp() {
@@ -60,16 +60,10 @@ public class ExportApiControllerTest {
                 .baseUrl("http://localhost:" + port)
                 .responseTimeout(Duration.ofSeconds(60))
                 .build();
-        if (!dataLoaded) {
+        if (recordService.countActive() == 0) {
             DataLoadResult result = dataReader.readData();
             assertTrue(result.successful(), result.message());
-            dataLoaded = true;
         }
-    }
-
-    @AfterAll
-    static void afterAll() {
-        postgres.stop();
     }
 
     @Test
@@ -221,6 +215,39 @@ public class ExportApiControllerTest {
                     assertTrue(body.contains("DB#: MSBNK-IPB_Halle-PB001341"), "Response: " + body);
                     assertFalse(body.contains("MSBNK-IPB_Halle-PB999999"), "Response: " + body);
                 });
+    }
+
+    @Test
+    public void testCreateConversionTaskNistMSPOnlyInvalidAccession() {
+        String requestBody = "{ \"record_list\": [\"MSBNK-IPB_Halle-PB999999\"], \"format\": \"nist_msp\" }";
+        webTestClient.post().uri("/convert")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType("text/plain")
+                .expectBody(String.class)
+                .value(body -> assertEquals(System.lineSeparator(), body));
+    }
+
+    @Test
+    public void testCreateConversionTaskMissingFormat() {
+        String requestBody = "{ \"record_list\": [\"MSBNK-IPB_Halle-PB001341\"] }";
+        webTestClient.post().uri("/convert")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
+
+    @Test
+    public void testCreateConversionTaskUnsupportedFormat() {
+        String requestBody = "{ \"record_list\": [\"MSBNK-IPB_Halle-PB001341\"], \"format\": \"csv\" }";
+        webTestClient.post().uri("/convert")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 
     @Test

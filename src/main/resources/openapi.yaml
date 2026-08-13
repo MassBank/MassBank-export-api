@@ -57,6 +57,13 @@ paths:
                 json:
                   summary: JSON
                   description: JSON export
+        "400":
+          description: Unsupported or missing format value.
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+              example: Missing or unsupported format value.
 
   /metadata/{accession}:
     get:
@@ -165,6 +172,8 @@ components:
     conversion:
       description: a conversion task
       type: object
+      required:
+        - format
       properties:
         record_list:
           $ref: "#/components/schemas/record_list"
@@ -184,13 +193,19 @@ components:
     validation_result:
       description: Detailed validation errors for an invalid record.
       type: object
+      required:
+        - message
+        - line
+        - column
       properties:
         message:
           type: string
           example: Error message.
         line:
           type: integer
+          nullable: true
           example: 12
         column:
           type: integer
+          nullable: true
           example: 5

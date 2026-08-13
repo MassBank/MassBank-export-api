@@ -60,7 +60,7 @@
         <dependency>
             <groupId>io.github.massbank</groupId>
             <artifactId>massbank-lib</artifactId>
-            <version>1.0.23</version>
+            <version>1.0.25</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -170,15 +170,41 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>org.openapitools.OpenApiGeneratorApplication</mainClass>
-                    <layout>ZIP</layout>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>repackage</id>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>repackage-rest-api</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.openapitools.OpenApiGeneratorApplication</mainClass>
+                            <classifier>rest-api</classifier>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>repackage-data-import</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>massbank_export_api.importer.DataImportApplication</mainClass>
+                            <classifier>data-import</classifier>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.20.0</version>
+                <version>7.24.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -192,6 +218,7 @@
                             <configOptions>
                                 <useSpringBoot3>true</useSpringBoot3>
                                 <delegatePattern>true</delegatePattern>
+                                <openApiNullable>false</openApiNullable>
                             </configOptions>
                             <ignoreFileOverride>${project.basedir}/.openapi-generator-ignore</ignoreFileOverride>
                         </configuration>
