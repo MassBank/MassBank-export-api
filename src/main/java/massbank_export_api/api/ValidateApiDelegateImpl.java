@@ -31,7 +31,7 @@ public class ValidateApiDelegateImpl implements ValidateApiDelegate {
     @Override
     @SuppressWarnings("unchecked")
     public ResponseEntity<ValidationResult> validatePost(Validation validation) {
-        if (validation == null || validation.getText() == null) {
+        if (validation == null || validation.getText() == null || validation.getText().isBlank()) {
             String json = "{\"message\":\"Invalid request payload.\"}";
             return (ResponseEntity<ValidationResult>) (ResponseEntity<?>) ResponseEntity.badRequest()
                     .contentType(MediaType.APPLICATION_JSON)
