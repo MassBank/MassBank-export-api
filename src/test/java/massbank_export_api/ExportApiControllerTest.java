@@ -636,6 +636,16 @@ public class ExportApiControllerTest {
                 .expectHeader().contentType("application/json")
                 .expectBody()
                 .json(expectedResponse);
+
+        requestBody = "{}";
+        webTestClient.post().uri("/validate")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType("application/json")
+                .expectBody()
+                .jsonPath("$.message").isEqualTo("Invalid request payload.");
     }
 
     @Test

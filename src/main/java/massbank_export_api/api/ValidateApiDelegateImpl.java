@@ -6,12 +6,14 @@ import massbank_export_api.model.ValidationResult;
 
 import org.petitparser.context.Result;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 @Primary
@@ -27,9 +29,13 @@ public class ValidateApiDelegateImpl implements ValidateApiDelegate {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ResponseEntity<ValidationResult> validatePost(Validation validation) {
         if (validation == null || validation.getText() == null) {
-            return ResponseEntity.badRequest().build();
+            String json = "{\"message\":\"Invalid request payload.\"}";
+            return (ResponseEntity<ValidationResult>) (ResponseEntity<?>) ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new ByteArrayResource(json.getBytes(StandardCharsets.UTF_8)));
         }
 
         final String recordText = validation.getText();
@@ -64,7 +70,7 @@ public class ValidateApiDelegateImpl implements ValidateApiDelegate {
             validationResult.setLine(lineNumber);
             validationResult.setColumn(col);
 
-            respWithBody = ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+            respWithBody = ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(validationResult);
         }

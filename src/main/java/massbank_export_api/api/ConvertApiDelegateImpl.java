@@ -51,10 +51,10 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
         String formatValue = conversion.getFormat() != null ? conversion.getFormat().getValue() : "";
 
         if (formatValue.isBlank()) {
-            String message = "Missing or unsupported format value.";
+            String json = "{\"message\":\"Missing or unsupported format value.\"}";
             return ResponseEntity.badRequest()
-                    .contentType(MediaType.TEXT_PLAIN)
-                    .body(new ByteArrayResource(message.getBytes(StandardCharsets.UTF_8)));
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new ByteArrayResource(json.getBytes(StandardCharsets.UTF_8)));
         }
 
         final List<Record> records;
@@ -126,10 +126,10 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                 break;
             }
             default: {
-                String message = "Missing or unsupported format value.";
+                String json = "{\"message\":\"Missing or unsupported format value.\"}";
                 return ResponseEntity.badRequest()
-                        .contentType(MediaType.TEXT_PLAIN)
-                        .body(new ByteArrayResource(message.getBytes(StandardCharsets.UTF_8)));
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(new ByteArrayResource(json.getBytes(StandardCharsets.UTF_8)));
             }
         }
 
