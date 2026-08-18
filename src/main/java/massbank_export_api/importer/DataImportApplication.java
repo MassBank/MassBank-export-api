@@ -1,7 +1,6 @@
-package massbank_export_api;
+package massbank_export_api.importer;
 
 import massbank_export_api.api.DataLoadResult;
-import massbank_export_api.api.DataReader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.boot.CommandLineRunner;
@@ -10,7 +9,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-@SpringBootApplication(scanBasePackages = "massbank_export_api.api")
+@SpringBootApplication(scanBasePackages = "massbank_export_api")
 public class DataImportApplication {
 
     private static final Logger logger = LogManager.getLogger(DataImportApplication.class);
