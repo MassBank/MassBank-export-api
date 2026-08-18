@@ -18,6 +18,28 @@ paths:
               schema:
                 type: string
                 example: export api 0.1
+  /database/status:
+    get:
+      summary: Get database connectivity and content status.
+      operationId: databaseStatusGet
+      responses:
+        "200":
+          description: Database status details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/database_status"
+
+  /database/ready:
+    get:
+      summary: Check if the database is ready for serving record data.
+      operationId: databaseReadyGet
+      responses:
+        "200":
+          description: Database is ready.
+        "503":
+          description: Database is not ready.
+
   /convert:
     post:
       summary: Create a conversion task.
@@ -220,3 +242,27 @@ components:
           type: integer
           nullable: true
           example: 5
+
+    database_status:
+      description: Health and readiness details for the MassBank database.
+      type: object
+      required:
+        - ready
+        - reachable
+        - message
+      properties:
+        ready:
+          type: boolean
+          example: true
+        reachable:
+          type: boolean
+          example: true
+        active_record_count:
+          type: integer
+          format: int64
+          nullable: true
+          example: 42
+        message:
+          type: string
+          example: Database is reachable and contains active MassBank records.
+
