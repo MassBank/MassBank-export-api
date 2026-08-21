@@ -77,14 +77,23 @@ _records_. Default user is _massbank_export_api_user_ and password is _massbank-
 ## Build and Run
 
 Build the service with Maven:
-```mvn package```
+```bash
+mvn clean package
+```
+
+This build creates two executable jars:
+
+- `target/massbank-export-api-rest-api.jar`
+- `target/massbank-export-api-data-import.jar`
+
 Import the MassBank records into the configured PostgreSQL database once before starting the REST API:
 ```bash
-java -Dloader.main=massbank_export_api.DataImportApplication -jar target/massbank-export-api-*.jar
+java -jar target/massbank-export-api-data-import.jar
 ```
+
 Run the REST API:
 ```bash
-java -jar target/massbank-export-api-*.jar
+java -jar target/massbank-export-api-rest-api.jar
 ```
 
 ## Run with Docker
@@ -92,11 +101,29 @@ java -jar target/massbank-export-api-*.jar
 ### Build and Run
 
 The file `docker-compose.yml` provides the config to build and run the postgres database and the MassBank-export-api
-with docker. First build the package with `mvn package` as described above. Then copy `env.dist` file to `.env` file
-and configure to your needs. Then build and run with:
+with docker. Copy `env.dist` file to `.env` file and configure to your needs. Then build and run with:
 
 ```bash
 docker compose up --build
+```
+
+This starts PostgreSQL and the REST API service. The importer is available as a separate on-demand service profile.
+
+Run the importer profile when you want to (re)load data:
+
+```bash
+docker compose --profile import up --build data-loader
+```
+
+Both services use one Docker image that contains two jars:
+
+- `export-service` runs `/app-rest.jar`
+- `data-loader` runs `/app-import.jar`
+
+Then start or restart the REST API:
+
+```bash
+docker compose up --build export-service
 ```
 
 ### Use Pre-built Container
@@ -107,6 +134,12 @@ The fastest way to get things running after creating `.env` is:
 
 ```bash
 docker compose up
+```
+
+To run only the importer from the pre-built image:
+
+```bash
+docker compose --profile import up data-loader
 ```
 
 ## Usage

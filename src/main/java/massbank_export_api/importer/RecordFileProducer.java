@@ -29,7 +29,9 @@ public class RecordFileProducer {
             AtomicReference<Throwable> fatalError) {
         try {
             final String content = Files.readString(filename, StandardCharsets.UTF_8);
-            final Result result = new RecordParser(new HashSet<>()).parse(content);
+            final HashSet<String> configKeys = new HashSet<>();
+            configKeys.add("legacy");
+            final Result result = new RecordParser(configKeys).parse(content);
             if (result.isSuccess() && result.get() instanceof Record record) {
                 queue.put(Optional.of(record));
             } else {
