@@ -37,8 +37,8 @@ public class DataReader {
         final Path dataDirectoryPath = Paths.get(dataDirectory);
         final PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + dataDirectoryPath + "/*/*.txt");
         try {
-            recordService.deleteAll();
-            logger.info("Database connectivity test successful. Cleared existing records in the database.");
+            recordService.resetAll();
+            logger.info("Database connectivity test successful. Reset all records in the database.");
         } catch (Exception e) {
             logger.error("Database connectivity test failed", e);
             logger.error("Check your database configuration and connectivity.");

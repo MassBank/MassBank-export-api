@@ -1,6 +1,6 @@
 package massbank_export_api.importer;
 
-import massbank.Record;
+import massbank.AbstractRecord;
 import massbank.RecordParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +24,7 @@ public class RecordFileProducer {
 
     public void produce(
             Path filename,
-            BlockingQueue<Optional<Record>> queue,
+            BlockingQueue<Optional<AbstractRecord>> queue,
             AtomicInteger failedCounter,
             AtomicReference<Throwable> fatalError) {
         try {
@@ -32,11 +32,14 @@ public class RecordFileProducer {
             final HashSet<String> configKeys = new HashSet<>();
             configKeys.add("legacy");
             final Result result = new RecordParser(configKeys).parse(content);
-            if (result.isSuccess() && result.get() instanceof Record record) {
+            if (result.isSuccess() && result.get() instanceof AbstractRecord record) {
                 queue.put(Optional.of(record));
             } else {
                 failedCounter.incrementAndGet();
-                logger.warn("Could not parse MassBank record file: {}", filename);
+                logger.warn("Could not parse MassBank record file: {} (position {}): {}",
+                        filename,
+                        result.getPosition(),
+                        result.getMessage());
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -50,4 +53,3 @@ public class RecordFileProducer {
         }
     }
 }
-

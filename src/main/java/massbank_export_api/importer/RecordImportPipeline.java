@@ -1,7 +1,6 @@
 package massbank_export_api.importer;
 
 import massbank.AbstractRecord;
-import massbank.Record;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,7 +56,7 @@ public class RecordImportPipeline {
                 effectiveQueueCapacity,
                 effectiveChunkSize);
 
-        final BlockingQueue<Optional<Record>> queue = new LinkedBlockingQueue<>(effectiveQueueCapacity);
+        final BlockingQueue<Optional<AbstractRecord>> queue = new LinkedBlockingQueue<>(effectiveQueueCapacity);
         final AtomicInteger progressCounter = new AtomicInteger(0);
         final AtomicInteger savedCounter = new AtomicInteger(0);
         final AtomicInteger failedCounter = new AtomicInteger(0);
@@ -120,7 +119,7 @@ public class RecordImportPipeline {
     }
 
     private void consume(
-            BlockingQueue<Optional<Record>> queue,
+            BlockingQueue<Optional<AbstractRecord>> queue,
             int chunkSize,
             AtomicInteger savedCounter,
             AtomicInteger failedCounter,
@@ -128,7 +127,7 @@ public class RecordImportPipeline {
         final List<AbstractRecord> batch = new ArrayList<>(chunkSize);
         try {
             while (true) {
-                final Optional<Record> next = queue.take();
+                final Optional<AbstractRecord> next = queue.take();
                 if (next.isEmpty()) {
                     break;
                 }
@@ -165,8 +164,4 @@ public class RecordImportPipeline {
         }
     }
 }
-
-
-
-
 

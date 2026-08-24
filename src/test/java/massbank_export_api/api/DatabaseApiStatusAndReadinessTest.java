@@ -76,7 +76,7 @@ class DatabaseApiStatusAndReadinessTest {
 
         @BeforeAll
         void prepareEmptyDatabase() {
-            recordService.deleteAll();
+            recordService.resetAll();
         }
 
         @Test
@@ -112,7 +112,7 @@ class DatabaseApiStatusAndReadinessTest {
 
         @BeforeAll
         void prepareLoadedDatabase() {
-            recordService.deleteAll();
+            recordService.resetAll();
             loadData();
         }
 
