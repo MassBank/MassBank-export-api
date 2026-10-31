@@ -115,5 +115,3 @@ CREATE INDEX IF NOT EXISTS shared_peaks_record_idx ON public."massbank-peaks" (r
 CREATE INDEX IF NOT EXISTS shared_peaks_mz_idx ON public."massbank-peaks" (mz);
 CREATE INDEX IF NOT EXISTS shared_records_mass_idx ON public."massbank-records" (ch_exact_mass);
 CREATE INDEX IF NOT EXISTS shared_records_splash_idx ON public."massbank-records" (pk_splash);
-CREATE INDEX IF NOT EXISTS shared_records_bingo_idx ON public."massbank-records"
-USING bingo_idx (ch_smiles bingo.molecule) WHERE ch_smiles NOT IN ('', 'N/A');

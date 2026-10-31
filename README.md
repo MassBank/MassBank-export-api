@@ -92,6 +92,12 @@ index excludes empty/`N/A` structures. Other invalid structures follow the
 installed Bingo configuration. PostgreSQL-specific DDL cannot be expressed as
 JPA annotations.
 
+The importer checks that Bingo is installed before modifying the dataset, marks
+the database unready, and removes the previous cartridge index. It bulk-builds
+that index only after all JPA records have been persisted, avoiding repeated
+cartridge updates during collection persistence. Readiness is enabled only
+after index creation and statistics collection succeed.
+
 Provision a **fresh** database owned by the importer user; install Bingo into
 that database with `/opt/bingo-postgres/init-scripts/000_bingo_install.sql` and set
 `ALLOW_NON_UNIQUE_DEAROMATIZATION=1`. The cartridge's files must match the server's
