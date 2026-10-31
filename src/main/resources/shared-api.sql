@@ -1,8 +1,9 @@
 CREATE SCHEMA IF NOT EXISTS massbank_api;
 
--- These are live views, not a second copy of the imported records.
+-- Canonical records remain in JPA tables. Import-completion projections below
+-- contain only derived search/statistics data in this same database.
 CREATE OR REPLACE FUNCTION massbank_api.atom_count(formula text) RETURNS integer
-LANGUAGE sql IMMUTABLE STRICT AS $$
+LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE AS $$
     SELECT coalesce(sum(coalesce(nullif(part[1], ''), '1')::integer), 0)::integer
     FROM regexp_matches(formula, '[A-Z][a-z]?([0-9]*)', 'g') AS part
 $$;
@@ -24,9 +25,12 @@ SELECT 'MS_TYPE'::text AS subtag, ac_mass_spectrometry_ms_type AS value FROM pub
 UNION
 SELECT 'ION_MODE', ac_mass_spectrometry_ion_mode FROM public."massbank-records";
 
-CREATE OR REPLACE VIEW massbank_api.compound_name AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS massbank_api.name_search AS
 SELECT accession AS massbank_id, jsonb_array_elements_text(ch_name) AS name
 FROM public."massbank-records";
+
+CREATE OR REPLACE VIEW massbank_api.compound_name AS
+SELECT massbank_id, name FROM massbank_api.name_search;
 
 CREATE OR REPLACE VIEW massbank_api.compound_class AS
 SELECT accession AS massbank_id, jsonb_array_elements_text(ch_compound_class) AS class
@@ -60,8 +64,8 @@ SELECT r.accession AS massbank_id, r.accession,
        massbank_api.atom_count(r.ch_formula) AS atomcount
 FROM public."massbank-records" r;
 
-CREATE OR REPLACE VIEW massbank_api.peak_differences AS
-WITH focused AS (
+CREATE MATERIALIZED VIEW IF NOT EXISTS massbank_api.neutral_loss_index AS
+WITH focused AS MATERIALIZED (
     SELECT "Record_accession" AS accession,
            CASE WHEN ms_focused_ion->>'value' ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?$'
                 THEN (ms_focused_ion->>'value')::double precision END AS precursor_mass
@@ -78,6 +82,13 @@ WHERE r.ac_mass_spectrometry_ms_type IN ('MS2', 'MS3', 'MS4')
   AND f.precursor_mass IS NOT NULL
   AND p.mz > 0 AND p.intensity > 0
   AND (SELECT count(*) FROM public."massbank-peaks" q WHERE q.record_id = r.accession) > 1;
+
+CREATE INDEX IF NOT EXISTS shared_neutral_loss_difference_idx
+ON massbank_api.neutral_loss_index (difference);
+
+CREATE OR REPLACE VIEW massbank_api.peak_differences AS
+SELECT spectrum_id, peak_id, precursor_mass, difference, rel_intensity
+FROM massbank_api.neutral_loss_index;
 
 CREATE OR REPLACE VIEW massbank_api.molecules AS
 SELECT accession, ch_smiles AS molecule, massbank_api.atom_count(ch_formula) AS atomcount
@@ -112,6 +123,28 @@ SELECT r.accession, to_jsonb(r) || jsonb_build_object(
 ) AS document FROM public."massbank-records" r;
 
 CREATE INDEX IF NOT EXISTS shared_peaks_record_idx ON public."massbank-peaks" (record_id);
-CREATE INDEX IF NOT EXISTS shared_peaks_mz_idx ON public."massbank-peaks" (mz);
+CREATE INDEX IF NOT EXISTS shared_peaks_mz_cover_idx ON public."massbank-peaks" (mz)
+INCLUDE (record_id, rel_intensity) WHERE mz > 0 AND intensity > 0;
+DROP INDEX IF EXISTS public.shared_peaks_mz_idx;
 CREATE INDEX IF NOT EXISTS shared_records_mass_idx ON public."massbank-records" (ch_exact_mass);
 CREATE INDEX IF NOT EXISTS shared_records_splash_idx ON public."massbank-records" (pk_splash);
+CREATE INDEX IF NOT EXISTS shared_records_browse_idx ON public."massbank-records"
+((split_part(accession, '-', 2)), accession, (massbank_api.atom_count(ch_formula)))
+INCLUDE (ch_formula, ac_mass_spectrometry_ms_type, ac_mass_spectrometry_ion_mode);
+CREATE INDEX IF NOT EXISTS shared_records_formula_idx ON public."massbank-records"
+(ch_formula, accession, (massbank_api.atom_count(ch_formula)));
+CREATE INDEX IF NOT EXISTS shared_records_accession_cover_idx ON public."massbank-records"
+(accession, (massbank_api.atom_count(ch_formula))) INCLUDE (ch_formula);
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS massbank_api.metadata_statistics AS
+SELECT 'spectra'::text AS kind, ''::text AS value, count(DISTINCT pk_splash) AS count
+FROM public."massbank-records"
+UNION ALL
+SELECT 'compound', '', count(DISTINCT ch_iupac)
+FROM public."massbank-records" WHERE ch_iupac <> 'N/A'
+UNION ALL
+SELECT 'class', class, count(class)
+FROM massbank_api.compound_class GROUP BY class
+UNION ALL
+SELECT 'chemont', identifier, count(identifier)
+FROM massbank_api.compound_link WHERE database = 'ChemOnt' GROUP BY identifier;

@@ -85,9 +85,13 @@ window and run only one importer at a time. Both APIs remain unready until all
 files have imported successfully. Set `MB_DATA_VERSION` and `MB_DATA_COMMIT` to
 identify the release in API metadata (defaults: `unknown`).
 
-`shared-api.sql` adds live read views, ordinary search indexes and the Bingo
-index after JPA has created its tables. No second database or duplicated record
-store is used. Bingo operates directly on the JPA `ch_smiles` column; the partial
+`shared-api.sql` adds read views and search indexes after JPA creates its tables.
+Canonical records remain exclusively in those JPA tables in the same database.
+The neutral-loss, name-search and metadata-statistics materialized views contain only derived
+search/aggregate data. The importer refreshes them after every successful import
+and before setting readiness; APIs never write them. Do not edit canonical tables
+outside the importer and expect these projections to update automatically.
+Bingo operates directly on the JPA `ch_smiles` column; the partial
 index excludes empty/`N/A` structures. Other invalid structures follow the
 installed Bingo configuration. PostgreSQL-specific DDL cannot be expressed as
 JPA annotations.
@@ -96,7 +100,34 @@ The importer checks that Bingo is installed before modifying the dataset, marks
 the database unready, and removes the previous cartridge index. It bulk-builds
 that index only after all JPA records have been persisted, avoiding repeated
 cartridge updates during collection persistence. Readiness is enabled only
-after index creation and statistics collection succeed.
+after index creation, projection refresh and statistics collection succeed.
+
+Covering expression indexes store computed atom counts and provide ordered
+browse/formula results without per-request formula parsing. A partial covering
+peak index avoids reading invalid peaks or fetching each matched heap tuple.
+The neutral-loss projection preserves the original float arithmetic, peak IDs,
+multiple precursors and raw-peak-count condition; its difference index replaces
+millions of repeated JSON/regex operations per request.
+
+For an already imported database, install this additive optimization without
+reimporting records: stop concurrent imports, apply `src/main/resources/shared-api.sql`
+with `psql -v ON_ERROR_STOP=1 --single-transaction`, then analyze the three projections
+and vacuum/analyze `public."massbank-records"` and `public."massbank-peaks"`.
+Initial projection creation reads the existing canonical dataset in that
+transaction. Upgrade the Go API only after this migration succeeds. Keep the
+Helm importer disabled for this software-only upgrade; explicitly enable it for
+the next dataset import. Schema/index creation takes locks, so schedule a
+maintenance window. The REST application remains schema-validation-only.
+
+Regression checks on an imported test database:
+
+```sh
+psql -v ON_ERROR_STOP=1 -f deploy/test-shared-search.sql
+mvn -Dtest=SharedDatabaseTest test
+```
+
+The SQL test rolls back all fixtures/schema changes and compares the complete
+neutral-loss multiset and metadata aggregates against their original queries.
 
 Provision a **fresh** database owned by the importer user; install Bingo into
 that database with `/opt/bingo-postgres/init-scripts/000_bingo_install.sql` and set

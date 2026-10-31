@@ -59,6 +59,12 @@ public class SharedDatabase {
                 """);
         jdbc.execute("ANALYZE public.\"massbank-records\"");
         jdbc.execute("ANALYZE public.\"massbank-peaks\"");
+        jdbc.execute("REFRESH MATERIALIZED VIEW massbank_api.neutral_loss_index");
+        jdbc.execute("REFRESH MATERIALIZED VIEW massbank_api.name_search");
+        jdbc.execute("REFRESH MATERIALIZED VIEW massbank_api.metadata_statistics");
+        jdbc.execute("ANALYZE massbank_api.neutral_loss_index");
+        jdbc.execute("ANALYZE massbank_api.name_search");
+        jdbc.execute("ANALYZE massbank_api.metadata_statistics");
         jdbc.update("UPDATE shared_import_metadata SET ready = true WHERE id = 1");
     }
 }

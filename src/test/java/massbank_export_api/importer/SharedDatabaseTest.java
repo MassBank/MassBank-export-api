@@ -49,6 +49,12 @@ class SharedDatabaseTest {
         order.verify(jdbc).execute(contains("CREATE INDEX shared_records_bingo_idx"));
         order.verify(jdbc).execute("ANALYZE public.\"massbank-records\"");
         order.verify(jdbc).execute("ANALYZE public.\"massbank-peaks\"");
+        order.verify(jdbc).execute("REFRESH MATERIALIZED VIEW massbank_api.neutral_loss_index");
+        order.verify(jdbc).execute("REFRESH MATERIALIZED VIEW massbank_api.name_search");
+        order.verify(jdbc).execute("REFRESH MATERIALIZED VIEW massbank_api.metadata_statistics");
+        order.verify(jdbc).execute("ANALYZE massbank_api.neutral_loss_index");
+        order.verify(jdbc).execute("ANALYZE massbank_api.name_search");
+        order.verify(jdbc).execute("ANALYZE massbank_api.metadata_statistics");
         order.verify(jdbc).update("UPDATE shared_import_metadata SET ready = true WHERE id = 1");
     }
 
@@ -56,6 +62,15 @@ class SharedDatabaseTest {
     void indexFailureNeverMarksTheDatabaseReady() {
         SharedDatabase database = database();
         doThrow(new IllegalStateException("index failed")).when(jdbc).execute(contains("CREATE INDEX"));
+        assertThrows(IllegalStateException.class, database::completed);
+        verify(jdbc, never()).update("UPDATE shared_import_metadata SET ready = true WHERE id = 1");
+    }
+
+    @Test
+    void projectionFailureNeverMarksTheDatabaseReady() {
+        SharedDatabase database = database();
+        doThrow(new IllegalStateException("refresh failed")).when(jdbc)
+                .execute("REFRESH MATERIALIZED VIEW massbank_api.metadata_statistics");
         assertThrows(IllegalStateException.class, database::completed);
         verify(jdbc, never()).update("UPDATE shared_import_metadata SET ready = true WHERE id = 1");
     }
