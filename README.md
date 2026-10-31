@@ -128,6 +128,10 @@ mvn -Dtest=SharedDatabaseTest test
 
 The SQL test rolls back all fixtures/schema changes and compares the complete
 neutral-loss multiset and metadata aggregates against their original queries.
+`mvn -Dtest=RecordFileProducerDateTest test` checks that all three allowed DATE
+forms survive the actual import parser and raw-text serialization unchanged.
+The shared Go API derives its optional historical date fields from this text;
+the importer must not substitute missing dates.
 
 Provision a **fresh** database owned by the importer user; install Bingo into
 that database with `/opt/bingo-postgres/init-scripts/000_bingo_install.sql` and set
