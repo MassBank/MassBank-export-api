@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shared-jpa-export
+  namespace: massbank-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shared-jpa-export
+  template:
+    metadata:
+      labels:
+        app: shared-jpa-export
+    spec:
+      containers:
+        - name: export
+          image: quay.io/massbank/massbank-export-api:test-shared-jpa-13a3ec2b285f90cb30400ba3209f627f5b1bb7b4
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: shared-jpa-database
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-pw
+                  key: password
+          startupProbe:
+            httpGet:
+              path: /database/ready
+              port: http
+            failureThreshold: 60
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /database/ready
+              port: http
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shared-jpa-export
+  namespace: massbank-dev
+spec:
+  selector:
+    app: shared-jpa-export
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shared-jpa-api
+  namespace: massbank-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shared-jpa-api
+  template:
+    metadata:
+      labels:
+        app: shared-jpa-api
+    spec:
+      containers:
+        - name: api
+          image: quay.io/massbank/massbank-api:test-shared-jpa-5cdc41af1e116a47e5f1c56f8b9e996a7365c0b0
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: shared-jpa-database
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-pw
+                  key: password
+            - name: DB_SCHEMA
+              value: jpa
+            - name: MB3_API_URL
+              value: http://shared-jpa-api:8080
+            - name: MB3_API_BASE_URL
+              value: /MassBank-api
+            - name: EXPORT_SERVICE_URL
+              value: http://shared-jpa-export:8080
+            - name: SIMILARITY_SERVICE_COSINE_URL
+              value: http://massbank-dev-massbank-similarity-api:8080
+          startupProbe:
+            httpGet:
+              path: /MassBank-api/records/count
+              port: http
+            failureThreshold: 120
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /MassBank-api/records/count
+              port: http
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shared-jpa-api
+  namespace: massbank-dev
+spec:
+  selector:
+    app: shared-jpa-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

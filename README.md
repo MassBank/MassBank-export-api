@@ -111,6 +111,40 @@ The dedicated `shared-database-image.yml` workflow builds pushes on
 `quay.io/massbank/massbank-export-api:test-shared-jpa-<full-commit-SHA>`.
 It does not overwrite release, `dev`, or `latest` tags.
 
+### Isolated Kubernetes test
+
+`deploy/shared-test-*.yaml` creates **additional** test services in `massbank-dev`,
+using `massbank_shared_test` on `massbank-dev-postgres`. Existing deployments and
+the old `massbank`/`records` databases are not changed. Provision the test database
+and Bingo as described above before applying the manifests. They reference
+immutable branch-image SHAs; update those references when testing newer commits.
+
+From this repository, package the existing integration fixtures (677 records)
+into a ConfigMap and run the importer image:
+
+```sh
+tar -czf /tmp/shared-fixtures.tar.gz -C src/test/resources MassBank-data-test
+kubectl -n massbank-dev create configmap shared-jpa-fixtures \
+  --from-file=/tmp/shared-fixtures.tar.gz --dry-run=client -o yaml | kubectl apply --server-side -f -
+kubectl apply -f deploy/shared-test-import.yaml
+kubectl -n massbank-dev wait --for=condition=complete job/shared-jpa-import --timeout=1800s
+kubectl apply -f deploy/shared-test-services.yaml
+kubectl -n massbank-dev rollout status deployment/shared-jpa-export
+kubectl -n massbank-dev rollout status deployment/shared-jpa-api
+rm /tmp/shared-fixtures.tar.gz
+```
+
+Port-forward `service/shared-jpa-api` and `service/shared-jpa-export` (port 8080)
+to compare `/MassBank-api/records/count` with `/database/status`, retrieve the
+same accession from `/MassBank-api/records/{accession}` and `/rawtext/{accession}`,
+and exercise browse, formula, peak, neutral-loss and substructure filters.
+With port forwards on localhost ports 18081 (API) and 18083 (export), run
+`python3 deploy/check-shared-database.py` for these cross-service assertions.
+The Go integration test also checks all imported records, read-only access and
+the Bingo query plan. Delete only the named test Job before deliberately
+rerunning it; it replaces the test dataset. To remove the test workloads, delete
+the two manifests and `shared-jpa-fixtures`; the database is retained.
+
 
 ## Build and Run
 
@@ -142,6 +176,7 @@ The file `docker-compose.yml` provides the config to build and run the postgres 
 with docker. Copy `env.dist` file to `.env` file and configure to your needs. Then build and run with:
 
 ```bash
+docker compose --profile import run --rm --build data-loader
 docker compose up --build
 ```
 
@@ -150,7 +185,7 @@ This starts PostgreSQL and the REST API service. The importer is available as a 
 Run the importer profile when you want to (re)load data:
 
 ```bash
-docker compose --profile import up --build data-loader
+docker compose --profile import run --rm --build data-loader
 ```
 
 Both services use one Docker image that contains two jars:
@@ -171,13 +206,14 @@ Pre-built Docker images are available from
 The fastest way to get things running after creating `.env` is:
 
 ```bash
+docker compose --profile import run --rm data-loader
 docker compose up
 ```
 
 To run only the importer from the pre-built image:
 
 ```bash
-docker compose --profile import up data-loader
+docker compose --profile import run --rm data-loader
 ```
 
 ## Usage

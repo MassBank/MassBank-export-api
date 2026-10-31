@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shared-jpa-database
+  namespace: massbank-dev
+data:
+  DB_HOST: massbank-dev-postgres
+  DB_PORT: "5432"
+  DB_NAME: massbank_shared_test
+  DB_USER: massbank
+  MB_SHARED_DATABASE: "true"
+  MB_DATA_VERSION: integration-fixtures
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: shared-jpa-import
+  namespace: massbank-dev
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 1800
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: fixtures
+          image: alpine:3.22
+          command: ["tar", "-xzf", "/fixtures/shared-fixtures.tar.gz", "-C", "/data"]
+          volumeMounts:
+            - name: fixtures
+              mountPath: /fixtures
+              readOnly: true
+            - name: data
+              mountPath: /data
+      containers:
+        - name: importer
+          image: quay.io/massbank/massbank-export-api:test-shared-jpa-13a3ec2b285f90cb30400ba3209f627f5b1bb7b4
+          command: ["java", "-Xmx1200m", "-jar", "/app-import.jar"]
+          envFrom:
+            - configMapRef:
+                name: shared-jpa-database
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-pw
+                  key: password
+            - name: MB_DATA_DIRECTORY
+              value: /data/MassBank-data-test
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+              readOnly: true
+      volumes:
+        - name: fixtures
+          configMap:
+            name: shared-jpa-fixtures
+        - name: data
+          emptyDir: {}
