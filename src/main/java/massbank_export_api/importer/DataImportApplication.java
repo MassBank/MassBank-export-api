@@ -17,6 +17,7 @@ public class DataImportApplication {
     public static void main(String[] args) {
         SpringApplication application = new SpringApplication(DataImportApplication.class);
         application.setWebApplicationType(WebApplicationType.NONE);
+        application.setAdditionalProfiles("import");
         System.exit(SpringApplication.exit(application.run(args)));
     }
 

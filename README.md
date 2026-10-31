@@ -9,9 +9,9 @@ Spring Boot. It uses the RecordParserDefinition from the original
 ## Requirements
 
 - Java 21
-- Spring Boot 3.5
+- Spring Boot 4.1
 - maven
-- PostgreSQL (tested on version 17)
+- PostgreSQL 17 with the Bingo PostgreSQL cartridge for shared API searches
 
 ## Configuration
 
@@ -70,8 +70,46 @@ If not set / is used by default.
 Make sure to have a [PostgreSQL](https://www.postgresql.org) server installed and running on your system. The MassBank 
 data will be stored there.
 
-By default, the export service expects the PostgreSQL service running at _localhost_ with port 5432 and the database 
-_records_. Default user is _massbank_export_api_user_ and password is _massbank-export-api-password_.
+Both APIs use the same `DB_HOST`, `DB_PORT`, and `DB_NAME`. Defaults are
+`localhost:5432`, database `massbank`, user `massbank`. Supply `DB_PASSWORD`
+externally (for Kubernetes, use the existing `postgres-pw` Secret).
+
+### Shared database ownership and migration
+
+The import executable activates the `import` profile: Hibernate creates/updates
+the canonical JPA tables and the importer fills them. The REST executable uses
+`ddl-auto=validate` and never imports records at startup. Run the importer before
+starting either API. Missing/empty input is rejected before deleting any records.
+Imports replace the dataset and are not online/atomic swaps: schedule a maintenance
+window and run only one importer at a time. Both APIs remain unready until all
+files have imported successfully. Set `MB_DATA_VERSION` and `MB_DATA_COMMIT` to
+identify the release in API metadata (defaults: `unknown`).
+
+`shared-api.sql` adds live read views, ordinary search indexes and the Bingo
+index after JPA has created its tables. No second database or duplicated record
+store is used. Bingo operates directly on the JPA `ch_smiles` column; the partial
+index excludes empty/`N/A` structures. Other invalid structures follow the
+installed Bingo configuration. PostgreSQL-specific DDL cannot be expressed as
+JPA annotations.
+
+Provision a **fresh** database owned by the importer user; install Bingo into
+that database with `/opt/bingo-postgres/init-scripts/000_bingo_install.sql` and set
+`ALLOW_NON_UNIQUE_DEAROMATIZATION=1`. The cartridge's files must match the server's
+PostgreSQL major version. The importer fails explicitly if Bingo is unavailable.
+Installing Bingo into the old `massbank` database does not install it in another
+database on the same server.
+
+Point both services to the new database, set the Go API's `DB_SCHEMA=jpa`, and
+disable the old dbtool Job/service. Do not copy its legacy tables into the shared
+database. Keep the two old databases and old image/configuration references for
+rollback. Import requires DDL/DML privileges; use a read-only role for API access
+where possible. `MB_SHARED_DATABASE=false` supports export-only installations
+without Bingo/read views; it is not suitable for the shared Go API.
+
+The dedicated `shared-database-image.yml` workflow builds pushes on
+`feat/shared-jpa-database` to
+`quay.io/massbank/massbank-export-api:test-shared-jpa-<full-commit-SHA>`.
+It does not overwrite release, `dev`, or `latest` tags.
 
 
 ## Build and Run

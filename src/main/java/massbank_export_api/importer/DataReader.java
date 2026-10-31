@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -24,11 +25,14 @@ public class DataReader {
 
     private final RecordService recordService;
     private final RecordImportPipeline recordImportPipeline;
+    private final ObjectProvider<SharedDatabase> sharedDatabase;
 
     @Autowired
-    public DataReader(RecordService recordService, RecordImportPipeline recordImportPipeline) {
+    public DataReader(RecordService recordService, RecordImportPipeline recordImportPipeline,
+                      ObjectProvider<SharedDatabase> sharedDatabase) {
         this.recordService = recordService;
         this.recordImportPipeline = recordImportPipeline;
+        this.sharedDatabase = sharedDatabase;
     }
 
     public DataLoadResult readData() {
@@ -36,15 +40,6 @@ public class DataReader {
 
         final Path dataDirectoryPath = Paths.get(dataDirectory);
         final PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + dataDirectoryPath + "/*/*.txt");
-        try {
-            recordService.resetAll();
-            logger.info("Database connectivity test successful. Reset all records in the database.");
-        } catch (Exception e) {
-            logger.error("Database connectivity test failed", e);
-            logger.error("Check your database configuration and connectivity.");
-            return new DataLoadResult(0, 0, 0, 0, false, "Database connectivity test failed.");
-        }
-
         if (Files.exists(dataDirectoryPath) && Files.isDirectory(dataDirectoryPath)) {
             try (Stream<Path> paths = Files.walk(dataDirectoryPath)
                     .filter(Files::isRegularFile)
@@ -55,6 +50,18 @@ public class DataReader {
                 if (totalRecords == 0) {
                     return new DataLoadResult(0, 0, 0, 0, false,
                             "No record files were found in the configured data directory.");
+                }
+                SharedDatabase shared = sharedDatabase.getIfAvailable();
+                try {
+                    if (shared != null) {
+                        shared.prepare();
+                        shared.starting();
+                    }
+                    recordService.resetAll();
+                } catch (Exception e) {
+                    logger.error("Failed to prepare database for import", e);
+                    return new DataLoadResult(totalRecords, 0, 0, 0, false,
+                            "Failed to prepare database for import.");
                 }
                 final PipelineOutcome pipelineOutcome = recordImportPipeline.run(recordFiles);
 
@@ -69,6 +76,9 @@ public class DataReader {
                     final boolean successful = finalCount > 0
                             && pipelineOutcome.failedRecords() == 0
                             && !pipelineOutcome.hasFatalError();
+                    if (successful && shared != null) {
+                        shared.completed();
+                    }
                     final String message = successful
                             ? "Data loading completed successfully."
                             : "Data loading completed, but the database is not ready.";
@@ -91,4 +101,3 @@ public class DataReader {
     }
 
 }
-

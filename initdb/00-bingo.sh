@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+  -f /opt/bingo-postgres/init-scripts/000_bingo_install.sql
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+  -c "UPDATE bingo.bingo_config SET cvalue = '1' WHERE trim(cname) = 'ALLOW_NON_UNIQUE_DEAROMATIZATION'"
