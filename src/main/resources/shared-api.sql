@@ -83,8 +83,10 @@ WHERE r.ac_mass_spectrometry_ms_type IN ('MS2', 'MS3', 'MS4')
   AND p.mz > 0 AND p.intensity > 0
   AND (SELECT count(*) FROM public."massbank-peaks" q WHERE q.record_id = r.accession) > 1;
 
-CREATE INDEX IF NOT EXISTS shared_neutral_loss_difference_idx
-ON massbank_api.neutral_loss_index (difference);
+CREATE INDEX IF NOT EXISTS shared_neutral_loss_difference_cover_idx
+ON massbank_api.neutral_loss_index (difference)
+INCLUDE (spectrum_id, peak_id, precursor_mass, rel_intensity);
+DROP INDEX IF EXISTS massbank_api.shared_neutral_loss_difference_idx;
 
 CREATE OR REPLACE VIEW massbank_api.peak_differences AS
 SELECT spectrum_id, peak_id, precursor_mass, difference, rel_intensity
@@ -128,9 +130,10 @@ INCLUDE (record_id, rel_intensity) WHERE mz > 0 AND intensity > 0;
 DROP INDEX IF EXISTS public.shared_peaks_mz_idx;
 CREATE INDEX IF NOT EXISTS shared_records_mass_idx ON public."massbank-records" (ch_exact_mass);
 CREATE INDEX IF NOT EXISTS shared_records_splash_idx ON public."massbank-records" (pk_splash);
-CREATE INDEX IF NOT EXISTS shared_records_browse_idx ON public."massbank-records"
+CREATE INDEX IF NOT EXISTS shared_records_browse_cover_idx ON public."massbank-records"
 ((split_part(accession, '-', 2)), accession, (massbank_api.atom_count(ch_formula)))
-INCLUDE (ch_formula, ac_mass_spectrometry_ms_type, ac_mass_spectrometry_ion_mode);
+INCLUDE (ch_formula, ac_instrument_type, ac_mass_spectrometry_ms_type, ac_mass_spectrometry_ion_mode);
+DROP INDEX IF EXISTS public.shared_records_browse_idx;
 CREATE INDEX IF NOT EXISTS shared_records_formula_idx ON public."massbank-records"
 (ch_formula, accession, (massbank_api.atom_count(ch_formula)));
 CREATE INDEX IF NOT EXISTS shared_records_accession_cover_idx ON public."massbank-records"

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: export
-          image: quay.io/massbank/massbank-export-api:test-shared-jpa-13a3ec2b285f90cb30400ba3209f627f5b1bb7b4
+          image: quay.io/massbank/massbank-export-api:test-shared-jpa-7d77e9a22dd399063f1c6c6fd0630bb1dd6607b4
           ports:
             - containerPort: 8080
               name: http
@@ -76,7 +76,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: quay.io/massbank/massbank-api:test-shared-jpa-5cdc41af1e116a47e5f1c56f8b9e996a7365c0b0
+          image: quay.io/massbank/massbank-api:test-shared-jpa-607bbbaf7eec9cc211a393b9b0f3fbf596def5bb
           ports:
             - containerPort: 8080
               name: http

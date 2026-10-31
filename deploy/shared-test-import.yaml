@@ -34,7 +34,7 @@ spec:
               mountPath: /data
       containers:
         - name: importer
-          image: quay.io/massbank/massbank-export-api:test-shared-jpa-13a3ec2b285f90cb30400ba3209f627f5b1bb7b4
+          image: quay.io/massbank/massbank-export-api:test-shared-jpa-7d77e9a22dd399063f1c6c6fd0630bb1dd6607b4
           command: ["java", "-Xmx1200m", "-jar", "/app-import.jar"]
           envFrom:
             - configMapRef:
