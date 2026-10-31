@@ -121,7 +121,7 @@ SELECT r.accession, to_jsonb(r) || jsonb_build_object(
         FROM public."Record_msDataProcessing" WHERE "Record_accession" = r.accession), '[]'::jsonb),
     'peaks', coalesce((SELECT jsonb_agg(jsonb_build_object(
         'id', id, 'mz', mz, 'intensity', intensity, 'rel', rel_intensity) ORDER BY mz, id)
-        FROM public."massbank-peaks" WHERE record_id = r.accession AND mz > 0 AND intensity > 0), '[]'::jsonb)
+        FROM public."massbank-peaks" WHERE record_id = r.accession), '[]'::jsonb)
 ) AS document FROM public."massbank-records" r;
 
 CREATE INDEX IF NOT EXISTS shared_peaks_record_idx ON public."massbank-peaks" (record_id);

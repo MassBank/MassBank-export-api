@@ -40,6 +40,12 @@ FROM (VALUES ('A',10,100),('A',20,100),('A',0,100),('B',10,100),
              ('C',10,100),('C',20,100),('D',10,100),('D',20,100),
              ('E',10,0),('E',20,100),('F',10,100),('F',20,100)) peaks(kind,mz,intensity);
 
+CREATE TEMP TABLE expected_record_peaks AS
+SELECT record_id, jsonb_agg(jsonb_build_object(
+    'id', id, 'mz', mz, 'intensity', intensity, 'rel', rel_intensity) ORDER BY mz, id) AS peaks
+FROM public."massbank-peaks" WHERE record_id LIKE 'MSBNK-PerfTest-%'
+GROUP BY record_id;
+
 CREATE TEMP TABLE expected_losses AS
 WITH focused AS (
     SELECT "Record_accession" AS accession,
@@ -70,6 +76,13 @@ REFRESH MATERIALIZED VIEW massbank_api.metadata_statistics;
 
 DO $$
 BEGIN
+    IF EXISTS (
+        SELECT 1 FROM expected_record_peaks expected
+        LEFT JOIN massbank_api.record_data actual ON actual.accession=expected.record_id
+        WHERE actual.document->'peaks' IS DISTINCT FROM expected.peaks
+    ) THEN
+        RAISE EXCEPTION 'Full records must preserve all stored peak rows, including zero intensity and zero m/z';
+    END IF;
     IF EXISTS (
         (SELECT * FROM expected_names EXCEPT ALL SELECT * FROM massbank_api.compound_name)
         UNION ALL

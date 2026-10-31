@@ -104,10 +104,24 @@ after index creation, projection refresh and statistics collection succeed.
 
 Covering expression indexes store computed atom counts and provide ordered
 browse/formula results without per-request formula parsing. A partial covering
-peak index avoids reading invalid peaks or fetching each matched heap tuple.
+peak index avoids reading nonpositive peaks or fetching each matched heap tuple.
 The neutral-loss projection preserves the original float arithmetic, peak IDs,
 multiple precursors and raw-peak-count condition; its difference index replaces
 millions of repeated JSON/regex operations per request.
+
+Full-record output is different from search: `massbank_api.record_data` includes
+**every stored peak**, including `intensity = 0` and `mz = 0`, in the existing
+`mz, id` order. Search-only positivity predicates must not filter this JSON view.
+The Go API already serializes zero-valued numbers explicitly. Peak/neutral-loss
+search eligibility and its indexes remain unchanged.
+
+For an existing shared database, apply the `CREATE OR REPLACE VIEW
+massbank_api.record_data` statement from `src/main/resources/shared-api.sql`
+transactionally with `psql -v ON_ERROR_STOP=1 --single-transaction` to enable this
+correction immediately. No canonical records, search projections or import
+metadata need to change, and no reimport is necessary. Keep the Helm importer
+disabled during the software-only image upgrade. New imports install the corrected
+view through the same SQL resource.
 
 For an already imported database, install this additive optimization without
 reimporting records: stop concurrent imports, apply `src/main/resources/shared-api.sql`
@@ -126,8 +140,9 @@ psql -v ON_ERROR_STOP=1 -f deploy/test-shared-search.sql
 mvn -Dtest=SharedDatabaseTest test
 ```
 
-The SQL test rolls back all fixtures/schema changes and compares the complete
-neutral-loss multiset and metadata aggregates against their original queries.
+The SQL test rolls back all fixtures/schema changes, verifies complete record
+peak arrays including zero-valued rows, and compares the complete neutral-loss
+multiset and metadata aggregates against their original queries.
 `mvn -Dtest=RecordFileProducerDateTest test` checks that all three allowed DATE
 forms survive the actual import parser and raw-text serialization unchanged.
 The shared Go API derives its optional historical date fields from this text;
