@@ -13,6 +13,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class MetadataApiDelegateImpl implements MetadataApiDelegate {
@@ -33,10 +34,11 @@ public class MetadataApiDelegateImpl implements MetadataApiDelegate {
      */
     @Override
     public ResponseEntity<List<Object>> metadataAccessionGet(String accession) {
-        final Record record = recordService.findByIdAsRecord(accession);
-        if (record == null) {
+        final Optional<Record> recordOptional = recordService.findOptionalByIdAsRecord(accession);
+        if (recordOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+        final Record record = recordOptional.get();
         final JsonArray metadataArray = record.createStructuredDataJsonArray();
 
         Type listType = new TypeToken<List<Object>>() {
