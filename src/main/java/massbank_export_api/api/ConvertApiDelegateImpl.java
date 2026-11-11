@@ -1,6 +1,7 @@
 package massbank_export_api.api;
 
 import massbank.Record;
+import massbank.db.RecordRepository;
 import massbank.db.RecordService;
 import massbank.export.RecordToJson;
 import massbank.export.RecordToNIST_MSP;
@@ -23,7 +24,10 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -32,10 +36,12 @@ import java.util.zip.ZipOutputStream;
 public class ConvertApiDelegateImpl implements ConvertApiDelegate {
 
     private final RecordService recordService;
+    private final RecordRepository recordRepository;
 
     @Autowired
-    public ConvertApiDelegateImpl(RecordService recordService) {
+    public ConvertApiDelegateImpl(RecordService recordService, RecordRepository recordRepository) {
         this.recordService = recordService;
+        this.recordRepository = recordRepository;
     }
 
     /**
@@ -61,10 +67,20 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
         if (conversion.getRecordList() == null || conversion.getRecordList().isEmpty()) {
             records = recordService.findAllActive();
         } else {
-            records = conversion.getRecordList().stream()
-                    .map(recordService::findOptionalByIdAsRecord)
-                    .flatMap(Optional::stream)
+            List<String> requestedAccessions = conversion.getRecordList().stream()
+                    .filter(acc -> acc != null && !acc.isBlank())
                     .toList();
+            if (requestedAccessions.isEmpty()) {
+                records = List.of();
+            } else {
+                Map<String, Record> recordMap = recordRepository.findAllById(requestedAccessions)
+                        .stream()
+                        .collect(Collectors.toMap(Record::getAccession, Function.identity(), (a, b) -> a));
+                records = requestedAccessions.stream()
+                        .map(recordMap::get)
+                        .filter(Objects::nonNull)
+                        .toList();
+            }
         }
 
         Resource responseBody;

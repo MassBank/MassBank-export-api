@@ -866,4 +866,33 @@ public class ExportApiIntegrationTest {
                 .json(expectedResponse);
     }
 
+    @Test
+    public void testCreateConversionTaskJsonWithNonExistentRecords() {
+        String requestBody = "{ \"record_list\": [\"MSBNK-NONEXISTENT-XX000000\", \"MSBNK-IPB_Halle-PB001341\"], \"format\": \"json\" }";
+
+        webTestClient.post().uri("/convert")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType("application/json")
+                .expectBody()
+                .jsonPath("$.length()").isEqualTo(1)
+                .jsonPath("$[0].ACCESSION").isEqualTo("MSBNK-IPB_Halle-PB001341");
+    }
+
+    @Test
+    public void testCreateConversionTaskJsonAllNonExistent() {
+        String requestBody = "{ \"record_list\": [\"MSBNK-NONEXISTENT-XX000000\"], \"format\": \"json\" }";
+
+        webTestClient.post().uri("/convert")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType("application/json")
+                .expectBody()
+                .json("[]");
+    }
+
 }
