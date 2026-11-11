@@ -510,6 +510,22 @@ public class ExportApiIntegrationTest {
                 });
     }
 
+    @Test
+    public void testGetMetadataNotFound() {
+        String accession = "MSBNK-NONEXISTENT-XX000000";
+        webTestClient.get().uri("/metadata/{accession}", accession)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    public void testGetRawtextNotFound() {
+        String accession = "MSBNK-NONEXISTENT-XX000000";
+        webTestClient.get().uri("/rawtext/{accession}", accession)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
 
     @Test
     public void testCreateConversionTaskJson() {

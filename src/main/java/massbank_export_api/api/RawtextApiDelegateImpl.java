@@ -7,6 +7,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class RawtextApiDelegateImpl implements RawtextApiDelegate {
 
@@ -26,10 +28,11 @@ public class RawtextApiDelegateImpl implements RawtextApiDelegate {
      */
     @Override
     public ResponseEntity<String> rawtextAccessionGet(String accession) {
-        final Record record = recordService.findByIdAsRecord(accession);
-        if (record == null) {
+        final Optional<Record> recordOptional = recordService.findOptionalByIdAsRecord(accession);
+        if (recordOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+        final Record record = recordOptional.get();
 
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_PLAIN)
