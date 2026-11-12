@@ -69,6 +69,18 @@ public class DataReader {
                     final boolean successful = finalCount > 0
                             && pipelineOutcome.failedRecords() == 0
                             && !pipelineOutcome.hasFatalError();
+                    if (successful) {
+                        try {
+                            // run() has joined the consumer, so all saveAll transactions have committed.
+                            recordService.ensurePeakIndex();
+                            logger.info("Peak lookup index and database statistics are ready.");
+                        } catch (Exception e) {
+                            logger.error("Error preparing peak lookup index after import", e);
+                            return new DataLoadResult(totalRecords, pipelineOutcome.savedRecords(),
+                                    pipelineOutcome.failedRecords(), finalCount, false,
+                                    "Error preparing peak lookup index after import.");
+                        }
+                    }
                     final String message = successful
                             ? "Data loading completed successfully."
                             : "Data loading completed, but the database is not ready.";
