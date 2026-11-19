@@ -1,0 +1,22 @@
+{
+  "name": "MassBank Export API (Podman)",
+  "dockerComposeFile": "compose.yaml",
+  "service": "dev",
+  "workspaceFolder": "/workspaces/MassBank-export-api",
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "updateRemoteUserUID": false,
+  "forwardPorts": [8080],
+  "mounts": [
+    "source=codex-devcontainer,target=/home/vscode/.codex,type=volume",
+    "source=copilot-devcontainer,target=/home/vscode/.copilot,type=volume"
+  ],
+  "portsAttributes": {
+    "8080": {
+      "label": "MassBank Export API",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "sudo chown vscode:vscode /home/vscode/.codex && test -w /home/vscode/.codex"
+}
