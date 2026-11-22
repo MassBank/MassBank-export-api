@@ -8,8 +8,8 @@ Spring Boot. It uses the RecordParserDefinition from the original
 
 ## Requirements
 
-- Java 21
-- Spring Boot 3.5
+- Java 25
+- Spring Boot 4.2
 - maven
 - PostgreSQL (tested on version 17)
 
