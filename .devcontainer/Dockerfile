@@ -1,9 +1,12 @@
+FROM eclipse-temurin:25-jdk AS java
 FROM mcr.microsoft.com/devcontainers/base:ubuntu26.04
+COPY --from=java /opt/java/openjdk /opt/java/openjdk
+ENV JAVA_HOME=/opt/java/openjdk
+ENV PATH="/opt/java/openjdk/bin:${PATH}"
 
-# Install Java 21, Maven, PostgreSQL client, GitHub CLI and diagnostic tools
+# Install Maven, PostgreSQL client, GitHub CLI and diagnostic tools
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y --no-install-recommends \
-        openjdk-21-jdk \
         maven \
         postgresql-client \
         curl \
@@ -15,4 +18,3 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 
 WORKDIR /workspaces/MassBank-export-api
 USER vscode
-CMD ["sleep", "infinity"]

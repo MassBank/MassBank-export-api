@@ -10,9 +10,8 @@ services:
       - label=disable
     user: "1000:1000"
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
-      - ..:/workspaces/MassBank-export-api:Z
       - maven-repo:/home/vscode/.m2:Z
     environment:
       DB_HOST: db
@@ -20,7 +19,7 @@ services:
       DB_USER: massbank3
       DB_PASSWORD: massbank3password
       DB_NAME: records
-      MB_DATA_DIRECTORY: /workspaces/MassBank-export-api/MassBank-data
+      MB_DATA_DIRECTORY: /workspaces/MassBank-data
     depends_on:
       db:
         condition: service_healthy
@@ -45,8 +44,10 @@ services:
 volumes:
   postgres-data:
   maven-repo:
+  # IntelliJ adds the mounts from devcontainer.json in its Compose override.
   codex-devcontainer:
     name: codex-devcontainer
   copilot-devcontainer:
     name: copilot-devcontainer
-
+  copilot-auth-devcontainer:
+    name: copilot-auth-devcontainer
