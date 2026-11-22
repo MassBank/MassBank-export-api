@@ -9,7 +9,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-@SpringBootApplication(scanBasePackages = "massbank_export_api")
+@SpringBootApplication
 public class DataImportApplication {
 
     private static final Logger logger = LogManager.getLogger(DataImportApplication.class);
