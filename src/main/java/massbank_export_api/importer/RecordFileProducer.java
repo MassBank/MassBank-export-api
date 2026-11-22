@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,6 +22,11 @@ public class RecordFileProducer {
 
     private static final Logger logger = LogManager.getLogger(RecordFileProducer.class);
 
+    // The import executor owns these threads and shuts them down after each run.
+    private final ThreadLocal<RecordParser> parser =
+            ThreadLocal.withInitial(() -> new RecordParser(Set.of("legacy")));
+
+
     public void produce(
             Path filename,
             BlockingQueue<Optional<AbstractRecord>> queue,
@@ -29,9 +34,7 @@ public class RecordFileProducer {
             AtomicReference<Throwable> fatalError) {
         try {
             final String content = Files.readString(filename, StandardCharsets.UTF_8);
-            final HashSet<String> configKeys = new HashSet<>();
-            configKeys.add("legacy");
-            final Result result = new RecordParser(configKeys).parse(content);
+            final Result result = parser.get().parse(content);
             if (result.isSuccess() && result.get() instanceof AbstractRecord record) {
                 queue.put(Optional.of(record));
             } else {
