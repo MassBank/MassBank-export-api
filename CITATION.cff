@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 title: "MassBank-export-api"
-version: "2.6.2"
-date-released: "2026-11-12"
+version: "2.7"
+date-released: "2026-11-22"
 authors:
   - name: "MassBank Consortium"
     website: "https://github.com/MassBank"
