@@ -2,6 +2,7 @@
   "name": "MassBank Export API (Podman)",
   "dockerComposeFile": "compose.yaml",
   "service": "dev",
+  "overrideCommand": false,
   "workspaceFolder": "/workspaces/MassBank-export-api",
   "remoteUser": "vscode",
   "containerUser": "vscode",
@@ -14,6 +15,6 @@
     "source=copilot-auth-devcontainer,target=/home/vscode/.config/github-copilot,type=volume"
   ],
   "postCreateCommand": "bash .devcontainer/setup.sh",
-  "postStartCommand": "sudo chown vscode:vscode /home/vscode/.codex && test -w /home/vscode/.codex",
+  "postStartCommand": "curl -fsS --unix-socket /run/podman/podman.sock http://localhost/_ping",
   "shutdownAction": "stopCompose"
 }
