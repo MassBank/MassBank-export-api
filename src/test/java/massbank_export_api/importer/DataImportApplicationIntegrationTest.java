@@ -7,6 +7,7 @@ import org.springframework.boot.WebApplicationType;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,7 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DataImportApplicationIntegrationTest {
 
     @Container
-    static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17");
+    static final PostgreSQLContainer postgres = new PostgreSQLContainer(
+            DockerImageName.parse("docker.io/library/postgres:17").asCompatibleSubstituteFor("postgres"));
 
     @Test
     void importsRecordsWithoutStartingAWebApplication() {

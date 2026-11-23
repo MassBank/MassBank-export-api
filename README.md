@@ -74,6 +74,16 @@ By default, the export service expects the PostgreSQL service running at _localh
 _records_. Default user is _massbank_export_api_user_ and password is _massbank-export-api-password_.
 
 
+## IntelliJ Dev Container with Podman
+
+Start the rootless API socket on the Linux host before opening the dev container:
+
+```sh
+systemctl --user start podman.socket
+```
+
+Compose mounts `$XDG_RUNTIME_DIR/podman/podman.sock` into the dev container. Testcontainers uses that socket to start PostgreSQL on the host and reaches the published ports via `host.containers.internal`. The socket gives processes in the dev container control over the host user's Podman containers.
+
 ## Build and Run
 
 Build the service with Maven:

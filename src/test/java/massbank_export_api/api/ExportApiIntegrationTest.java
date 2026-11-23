@@ -4,6 +4,8 @@ import massbank.db.RecordService;
 import massbank_export_api.importer.DataReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -14,6 +16,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 import massbank_export_api.importer.ImporterConfiguration;
 
 import java.io.InputStream;
@@ -32,7 +35,7 @@ public class ExportApiIntegrationTest {
 
     @Container
     static final PostgreSQLContainer postgres = new PostgreSQLContainer(
-            "postgres:17");
+            DockerImageName.parse("docker.io/library/postgres:17").asCompatibleSubstituteFor("postgres"));
 
     @DynamicPropertySource
     static void registerDatasourceProperties(DynamicPropertyRegistry registry) {
@@ -307,9 +310,13 @@ public class ExportApiIntegrationTest {
                 .value(body -> assertTrue(body != null && body.equals(expectedResponse), "Response: " + body));
     }
 
-    @Test
-    public void testCreateConversionTaskMassBank() {
-        String requestBody = "{ \"record_list\": [\"MSBNK-IPB_Halle-PB001341\" , \"MSBNK-IPB_Halle-PB000125\"], \"format\": \"massbank\" }";
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testCreateConversionTaskMassBank(boolean withDuplicate) {
+        String first = "MSBNK-IPB_Halle-PB001341";
+        String second = "MSBNK-IPB_Halle-PB000125";
+        List<String> accessions = withDuplicate ? List.of(first, second, first) : List.of(first, second);
+        var requestBody = Map.of("record_list", accessions, "format", "massbank");
 
         byte[] zipBytes = webTestClient.post().uri("/convert")
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
@@ -335,9 +342,7 @@ public class ExportApiIntegrationTest {
             fail("IOException reading zip stream: " + e.getMessage());
         }
 
-        assertTrue(fileNames.contains("MSBNK-IPB_Halle-PB001341.txt"));
-        assertTrue(fileNames.contains("MSBNK-IPB_Halle-PB000125.txt"));
-        assertEquals(2, fileNames.size());
+        assertEquals(List.of(first + ".txt", second + ".txt"), fileNames);
 
         for (String fileName : fileNames) {
             try (InputStream is = getClass().getResourceAsStream("/MassBank-data-test/IPB_Halle/" + fileName)) {

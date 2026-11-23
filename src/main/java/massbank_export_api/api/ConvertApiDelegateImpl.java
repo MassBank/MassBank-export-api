@@ -63,8 +63,9 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"records."
                 + (zip ? "zip" : json ? "json" : "msp") + "\"");
 
-        var requested = conversion.getRecordList();
-        boolean all = requested == null || requested.isEmpty();
+        var recordList = conversion.getRecordList();
+        boolean all = recordList == null || recordList.isEmpty();
+        var requested = all ? List.<String>of() : recordList.stream().filter(Objects::nonNull).distinct().toList();
         try {
             var out = response.getOutputStream();
             try (var archive = zip ? new ZipOutputStream(out, UTF_8) : null) {
@@ -81,7 +82,7 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                         after = page.getLast().getAccession();
                     } else {
                         int end = Math.min(offset + PAGE_SIZE, requested.size());
-                        var ids = requested.subList(offset, end).stream().filter(Objects::nonNull).toList();
+                        var ids = requested.subList(offset, end);
                         var found = repository.findAllById(ids).stream()
                                 .collect(Collectors.toMap(Record::getAccession, Function.identity()));
                         page = ids.stream().map(found::get).filter(Objects::nonNull).toList();

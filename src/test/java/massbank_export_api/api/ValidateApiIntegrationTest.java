@@ -15,6 +15,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 
@@ -26,7 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ValidateApiIntegrationTest {
 
     @Container
-    static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17");
+    static final PostgreSQLContainer postgres = new PostgreSQLContainer(
+            DockerImageName.parse("docker.io/library/postgres:17").asCompatibleSubstituteFor("postgres"));
 
     @DynamicPropertySource
     static void registerDatasourceProperties(DynamicPropertyRegistry registry) {

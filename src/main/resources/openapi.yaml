@@ -181,7 +181,7 @@ paths:
 components:
   schemas:
     record_list:
-      description: a list of records
+      description: A list of record accessions. Duplicate accessions are ignored; records are exported in order of first occurrence.
       type: array
       items:
         type: string
