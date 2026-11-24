@@ -34,7 +34,7 @@ public class RecordImportPipeline {
     public RecordImportPipeline(
             @Value("${import.producer-threads:8}") int producerThreads,
             @Value("${import.queue-capacity:10000}") int queueCapacity,
-            @Value("${import.chunk-size:2000}") int chunkSize,
+            @Value("${massbank.persistence.chunk-size}") int chunkSize,
             BatchRecordPersister batchRecordPersister,
             RecordFileProducer recordFileProducer) {
         this.producerThreads = Math.max(1, producerThreads);
