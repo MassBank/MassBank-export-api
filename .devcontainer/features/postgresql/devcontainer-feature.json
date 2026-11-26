@@ -1,0 +1,14 @@
+{
+  "id": "postgresql",
+  "version": "1.0.0",
+  "name": "PostgreSQL for MassBank Export API",
+  "description": "Installs PostgreSQL and initializes a temporary cluster as the Dev Container user.",
+  "options": {
+    "version": {
+      "type": "string",
+      "default": "17",
+      "description": "PostgreSQL major version"
+    }
+  },
+  "postStartCommand": "/usr/local/share/massbank-postgresql/start.sh"
+}

@@ -19,8 +19,8 @@ Spring Boot. It uses the RecordParserDefinition from the original
 
 This microservice is configured with environment variables. It requires a
 directory with the [MassBank-data](https://github.com/MassBank/MassBank-data)
-release. This directory needs to be configured in the environment variable
-`MB_DATA_DIRECTORY`.
+release. The default directory is `./MassBank-data`; set `MB_DATA_DIRECTORY`
+to use a different location.
 
 ```bash
 git clone https://github.com/MassBank/MassBank-data.git
@@ -40,7 +40,7 @@ export CORS_ALLOWED_ORIGINS=http://localhost:3000
 The application serves the content at the given CONTEXT_PATH. If no CONTEXT_PATH
 is given the application serves at root path http://localhost:8080/. To serve the
 application at a different path set the environment variable CONTEXT_PATH,
-e.g. `CONTEXT_PATH="/MassBank-export` and the server will listen on 
+e.g. `CONTEXT_PATH="/MassBank-export"` and the server will listen on
 http://localhost:8080/MassBank-export.
 
 ### Using a Reverse Proxy
@@ -70,11 +70,18 @@ If not set / is used by default.
 Make sure to have a [PostgreSQL](https://www.postgresql.org) server installed and running on your system. The MassBank 
 data will be stored there.
 
-By default, the export service expects the PostgreSQL service running at _localhost_ with port 5432 and the database 
-_records_. Default user is _massbank_export_api_user_ and password is _massbank-export-api-password_.
+Both the REST API and the importer use these database settings when run directly:
+
+| Variable | Default |
+| --- | --- |
+| `DB_HOST` | `localhost` |
+| `DB_PORT` | `5432` |
+| `DB_NAME` | `records` |
+| `DB_USER` | `massbank_export_api_user` |
+| `DB_PASSWORD` | `massbank-export-api-password` |
 
 
-## IntelliJ Dev Container with Podman
+## Dev Container with Podman
 
 Start the rootless API socket on the Linux host before opening the dev container:
 
@@ -82,11 +89,20 @@ Start the rootless API socket on the Linux host before opening the dev container
 systemctl --user start podman.socket
 ```
 
-Compose mounts `$XDG_RUNTIME_DIR/podman/podman.sock` into the dev container. Testcontainers uses that socket to start PostgreSQL on the host and reaches the published ports via `host.containers.internal`. The socket gives processes in the dev container control over the host user's Podman containers.
+The default configuration in `.devcontainer/devcontainer.json` uses a local
+feature to start a temporary PostgreSQL 17 cluster inside the dev container.
+Place `MassBank-data` and `MassBank-lib` next to this repository before opening
+it; the configuration bind-mounts both directories.
+
+The dev container mounts `$XDG_RUNTIME_DIR/podman/podman.sock`. Testcontainers
+uses that socket to start separate PostgreSQL containers on the host and reaches
+their published ports via `host.containers.internal`. The socket gives processes
+in the dev container control over the host user's Podman containers.
 
 ## Build and Run
 
-Build the service with Maven:
+Build the service with Maven. The build runs tests, including integration tests
+that require a Docker-compatible container runtime (see the Podman setup above).
 ```bash
 mvn clean package
 ```
@@ -110,46 +126,37 @@ java -jar target/massbank-export-api-rest-api.jar
 
 ### Build and Run
 
-The file `docker-compose.yml` provides the config to build and run the postgres database and the MassBank-export-api
-with docker. Copy `env.dist` file to `.env` file and configure to your needs. Then build and run with:
+Copy `env.dist` to `.env` and set `MB_DATA_DIRECTORY` to the host directory
+containing the MassBank data. `DB_PORT` changes only the published PostgreSQL
+port on the host; services always connect to PostgreSQL on port `5432` inside
+the Compose network. Set `CONTEXT_PATH` or `CORS_ALLOWED_ORIGINS` in `.env` to
+override the API defaults. Replace the sample database password before deploying.
 
 ```bash
-docker compose up --build
+docker compose pull postgres
+docker compose build export-service
+docker compose --profile import run --rm --no-build --pull never data-loader
+docker compose up -d --no-build --pull never export-service
 ```
 
-This starts PostgreSQL and the REST API service. The importer is available as a separate on-demand service profile.
-
-Run the importer profile when you want to (re)load data:
-
-```bash
-docker compose --profile import up --build data-loader
-```
+The importer starts PostgreSQL as a dependency and exits when the import finishes.
+Start the API after a successful import. To reload data, rerun the importer command.
 
 Both services use one Docker image that contains two jars:
 
 - `export-service` runs `/app-rest.jar`
 - `data-loader` runs `/app-import.jar`
 
-Then start or restart the REST API:
-
-```bash
-docker compose up --build export-service
-```
 
 ### Use Pre-built Container
 
 Pre-built Docker images are available from
 [quay.io/massbank/massbank-export-api](https://quay.io/repository/massbank/massbank-export-api).
-The fastest way to get things running after creating `.env` is:
+After creating `.env`, import the data, then start the API:
 
 ```bash
-docker compose up
-```
-
-To run only the importer from the pre-built image:
-
-```bash
-docker compose --profile import up data-loader
+docker compose --profile import run --rm --no-build --pull always data-loader
+docker compose up -d --no-build --pull always export-service
 ```
 
 ## Usage

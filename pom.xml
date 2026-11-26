@@ -20,7 +20,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>25</java.version>
-        <massbank-lib.version>1.2</massbank-lib.version>
+        <massbank-lib.version>1.5</massbank-lib.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.release>${java.version}</maven.compiler.release>
@@ -80,7 +80,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.14</version>
+            <version>42.7.15</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

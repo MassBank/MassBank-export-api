@@ -3,7 +3,7 @@ package massbank_export_api.api;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletResponse;
 import massbank.Record;
-import massbank.db.RecordRepository;
+import massbank.db.RecordService;
 import massbank.export.RecordToJson;
 import massbank.export.RecordToNIST_MSP;
 import massbank.export.RecordToRIKEN_MSP;
@@ -31,12 +31,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class ConvertApiDelegateImpl implements ConvertApiDelegate {
     private static final int PAGE_SIZE = 128;
     private final EntityManager db;
-    private final RecordRepository repository;
+    private final RecordService recordService;
     private final HttpServletResponse response;
 
-    public ConvertApiDelegateImpl(EntityManager db, RecordRepository repository, HttpServletResponse response) {
+    public ConvertApiDelegateImpl(EntityManager db, RecordService recordService, HttpServletResponse response) {
         this.db = db;
-        this.repository = repository;
+        this.recordService = recordService;
         this.response = response;
     }
 
@@ -83,7 +83,7 @@ public class ConvertApiDelegateImpl implements ConvertApiDelegate {
                     } else {
                         int end = Math.min(offset + PAGE_SIZE, requested.size());
                         var ids = requested.subList(offset, end);
-                        var found = repository.findAllById(ids).stream()
+                        var found = recordService.findAllActiveById(ids).stream()
                                 .collect(Collectors.toMap(Record::getAccession, Function.identity()));
                         page = ids.stream().map(found::get).filter(Objects::nonNull).toList();
                         offset = end;
